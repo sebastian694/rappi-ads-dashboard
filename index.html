@@ -450,6 +450,26 @@
     font-size: 13px; color: var(--rappi);
   }
 
+  /* ── chart pills ── */
+  .cpill {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 11px;
+    font-size: 11px; font-weight: 500;
+    font-family: var(--font);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .cpill:hover { border-color: var(--rappi-light); color: var(--rappi-light); }
+  .cpill.cpill-active {
+    background: var(--rappi-dim);
+    border-color: var(--rappi);
+    color: var(--rappi);
+  }
+
   /* scrollbar */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
@@ -594,9 +614,16 @@
   <!-- CHARTS ROW 1 -->
   <div class="charts-row">
     <div class="chart-card">
-      <div class="chart-header">
-        <div class="chart-title">Inversión diaria</div>
-        <div class="chart-sub">Amount Spent (USD) · evolución temporal</div>
+      <div class="chart-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div class="chart-title" id="simpleChartTitle">Inversión diaria</div>
+          <div class="chart-sub" id="simpleChartSub">Amount Spent (USD) · evolución temporal</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="cpill cpill-active" data-metric="spend">Inversión</button>
+          <button class="cpill" data-metric="clicks">Clics</button>
+          <button class="cpill" data-metric="impressions">Impresiones</button>
+        </div>
       </div>
       <div class="chart-wrap"><canvas id="chartSpend" height="210"></canvas></div>
     </div>
@@ -612,16 +639,23 @@
   <!-- CHARTS ROW 2 -->
   <div class="charts-row-2">
     <div class="chart-card">
-      <div class="chart-header">
-        <div class="chart-title">CTR diario</div>
-        <div class="chart-sub">Click-through rate (%)</div>
+      <div class="chart-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div class="chart-title" id="compoundChartTitle">CTR diario</div>
+          <div class="chart-sub" id="compoundChartSub">Click-through rate (%)</div>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button class="cpill cpill-active" data-compound="ctr">CTR</button>
+          <button class="cpill" data-compound="cpc">CPC</button>
+          <button class="cpill" data-compound="cpm">CPM</button>
+        </div>
       </div>
       <div class="chart-wrap"><canvas id="chartCtr" height="190"></canvas></div>
     </div>
     <div class="chart-card">
       <div class="chart-header">
         <div class="chart-title">CPC · CPM</div>
-        <div class="chart-sub">Evolución de costos (USD)</div>
+        <div class="chart-sub">Evolución comparada de costos</div>
       </div>
       <div class="chart-wrap"><canvas id="chartCosts" height="190"></canvas></div>
     </div>
@@ -891,29 +925,65 @@ function groupByDate(rows, key, avg=false) {
 
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
-function updateCharts(rows) {
-  // ── Spend line ──
-  destroyChart('spend');
-  const spendData = groupByDate(rows, 'spend');
-  charts.spend = new Chart(document.getElementById('chartSpend'), {
+// ── metric configs ─────────────────────────────────────
+let activeSimpleMetric   = 'spend';
+let activeCompoundMetric = 'ctr';
+
+const SIMPLE_METRICS = {
+  spend:       { label:'Inversión diaria',   sub:'Amount Spent (USD) · evolución temporal', color:'#FF441A', colorRgb:'255,68,26',   avg:false, fmt: v=>'$'+v.toFixed(2),   tipFmt: v=>'$'+v.toFixed(2) },
+  clicks:      { label:'Clics diarios',      sub:'Total de clics · evolución temporal',     color:'#22c55e', colorRgb:'34,197,94',   avg:false, fmt: v=>Math.round(v)+'',   tipFmt: v=>Math.round(v)+' clics' },
+  impressions: { label:'Impresiones diarias',sub:'Total de impresiones · evolución',        color:'#4C8EFF', colorRgb:'76,142,255',  avg:false, fmt: v=>v>=1000?(v/1000).toFixed(1)+'K':Math.round(v)+'', tipFmt: v=>Math.round(v).toLocaleString('en-US') },
+};
+const COMPOUND_METRICS = {
+  ctr: { label:'CTR diario',   sub:'Click-through rate (%)',        color:'#A259FF', colorRgb:'162,89,255', avg:true, fmt: v=>v.toFixed(2)+'%',  tipFmt: v=>v.toFixed(3)+'%'  },
+  cpc: { label:'CPC diario',   sub:'Costo por clic (USD)',          color:'#F5A623', colorRgb:'245,166,35', avg:true, fmt: v=>'$'+v.toFixed(3),  tipFmt: v=>'$'+v.toFixed(3)  },
+  cpm: { label:'CPM diario',   sub:'Costo por mil impresiones (USD)',color:'#00D4E8', colorRgb:'0,212,232',  avg:true, fmt: v=>'$'+v.toFixed(2),  tipFmt: v=>'$'+v.toFixed(2)  },
+};
+
+function buildLineChart(canvasId, data, cfg, height=210) {
+  destroyChart(canvasId);
+  const c = cfg;
+  charts[canvasId] = new Chart(document.getElementById(canvasId), {
     type: 'line',
-    data: { datasets: [{
-      data: spendData,
-      borderColor: '#FF441A',
+    data: { datasets:[{
+      data,
+      borderColor: c.color,
       backgroundColor: ctx => {
-        const g = ctx.chart.ctx.createLinearGradient(0,0,0,200);
-        g.addColorStop(0,'rgba(255,68,26,.2)'); g.addColorStop(1,'rgba(255,68,26,0)');
+        const g = ctx.chart.ctx.createLinearGradient(0,0,0,height);
+        g.addColorStop(0,`rgba(${c.colorRgb},.18)`); g.addColorStop(1,`rgba(${c.colorRgb},0)`);
         return g;
       },
-      fill: true, tension: 0.42, pointRadius: 2.5, pointHoverRadius: 5,
-      pointBackgroundColor: '#FF441A', borderWidth: 2.5,
+      fill:true, tension:0.42, pointRadius:2.5, pointHoverRadius:5,
+      pointBackgroundColor:c.color, borderWidth:2.5,
     }]},
-    options: {
+    options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c=>' $'+c.parsed.y.toFixed(2) }, backgroundColor:'#1F2433', titleColor:'#F0F2F7', bodyColor:'#A8B0C8', borderColor:'rgba(255,68,26,.3)', borderWidth:1 }},
-      scales: baseScales(v=>'$'+v),
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx=>' '+c.tipFmt(ctx.parsed.y) }, backgroundColor:'#1F2433', titleColor:'#F0F2F7', bodyColor:'#A8B0C8', borderColor:`rgba(${c.colorRgb},.35)`, borderWidth:1 }},
+      scales: baseScales(c.fmt),
     }
   });
+}
+
+function updateSimpleChart(rows) {
+  const cfg  = SIMPLE_METRICS[activeSimpleMetric];
+  const data = groupByDate(rows, activeSimpleMetric, cfg.avg);
+  document.getElementById('simpleChartTitle').textContent = cfg.label;
+  document.getElementById('simpleChartSub').textContent   = cfg.sub;
+  buildLineChart('chartSpend', data, cfg, 210);
+}
+
+function updateCompoundChart(rows) {
+  const cfg  = COMPOUND_METRICS[activeCompoundMetric];
+  const data = groupByDate(rows, activeCompoundMetric, cfg.avg);
+  document.getElementById('compoundChartTitle').textContent = cfg.label;
+  document.getElementById('compoundChartSub').textContent   = cfg.sub;
+  buildLineChart('chartCtr', data, cfg, 190);
+}
+
+function updateCharts(rows) {
+  updateSimpleChart(rows);
+  updateCompoundChart(rows);
+
 
   // ── Donut ──
   destroyChart('donut');
@@ -936,27 +1006,6 @@ function updateCharts(rows) {
     }
   });
 
-  // ── CTR ──
-  destroyChart('ctr');
-  const ctrData = groupByDate(rows, 'ctr', true);
-  charts.ctr = new Chart(document.getElementById('chartCtr'), {
-    type: 'line',
-    data: { datasets:[{
-      data: ctrData,
-      borderColor:'#A259FF',
-      backgroundColor: ctx => {
-        const g = ctx.chart.ctx.createLinearGradient(0,0,0,180);
-        g.addColorStop(0,'rgba(162,89,255,.15)'); g.addColorStop(1,'rgba(162,89,255,0)');
-        return g;
-      },
-      fill:true, tension:0.42, pointRadius:2, borderWidth:2,
-    }]},
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: c=>' '+c.parsed.y.toFixed(3)+'%' }, backgroundColor:'#1F2433', titleColor:'#F0F2F7', bodyColor:'#A8B0C8', borderColor:'rgba(162,89,255,.3)', borderWidth:1 }},
-      scales: baseScales(v=>v.toFixed(2)+'%'),
-    }
-  });
 
   // ── CPC + CPM ──
   destroyChart('costs');
@@ -1035,6 +1084,25 @@ document.querySelectorAll('th[data-col]').forEach(th => {
 document.getElementById('tableSearch').addEventListener('input', e=>{
   tableSearchVal=e.target.value;
   updateTable(getFiltered());
+});
+
+// ─── CHART PILL LISTENERS ───────────────────────────────
+document.querySelectorAll('[data-metric]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-metric]').forEach(b => b.classList.remove('cpill-active'));
+    btn.classList.add('cpill-active');
+    activeSimpleMetric = btn.dataset.metric;
+    updateSimpleChart(getFiltered());
+  });
+});
+
+document.querySelectorAll('[data-compound]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-compound]').forEach(b => b.classList.remove('cpill-active'));
+    btn.classList.add('cpill-active');
+    activeCompoundMetric = btn.dataset.compound;
+    updateCompoundChart(getFiltered());
+  });
 });
 
 // ─── INIT ───────────────────────────────────────────────
