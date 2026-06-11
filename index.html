@@ -644,6 +644,8 @@
     </select>
     <div class="filter-sep"></div>
     <div class="pill-group">
+      <button class="pill" data-range="today">Hoy</button>
+      <button class="pill" data-range="yesterday">Ayer</button>
       <button class="pill active" data-range="30">30d</button>
       <button class="pill" data-range="60">60d</button>
       <button class="pill" data-range="90">90d</button>
@@ -945,17 +947,27 @@ document.querySelectorAll('.pill').forEach(p => {
   p.addEventListener('click', () => {
     document.querySelectorAll('.pill').forEach(x=>x.classList.remove('active'));
     p.classList.add('active');
-    const range = parseInt(p.dataset.range);
-    const dates = allRows.map(r=>r.dateStart).filter(Boolean).sort((a,b)=>a-b);
-    if (!dates.length) return;
-    const to = dates[dates.length-1];
-    if (range === 0) {
-      document.getElementById('dateFrom').value = fmt(dates[0]);
+    const range = p.dataset.range;
+    const today = new Date();
+    if (range === 'today') {
+      document.getElementById('dateFrom').value = fmt(today);
+      document.getElementById('dateTo').value   = fmt(today);
+    } else if (range === 'yesterday') {
+      const yday = new Date(today); yday.setDate(today.getDate() - 1);
+      document.getElementById('dateFrom').value = fmt(yday);
+      document.getElementById('dateTo').value   = fmt(yday);
     } else {
-      const from = new Date(to); from.setDate(from.getDate()-range+1);
-      document.getElementById('dateFrom').value = fmt(from);
+      const dates = allRows.map(r=>r.dateStart).filter(Boolean).sort((a,b)=>a-b);
+      if (!dates.length) return;
+      const to = dates[dates.length-1];
+      if (range === '0') {
+        document.getElementById('dateFrom').value = fmt(dates[0]);
+      } else {
+        const from = new Date(to); from.setDate(from.getDate() - parseInt(range) + 1);
+        document.getElementById('dateFrom').value = fmt(from);
+      }
+      document.getElementById('dateTo').value = fmt(to);
     }
-    document.getElementById('dateTo').value = fmt(to);
     render();
   });
 });
