@@ -199,13 +199,15 @@
   .filters-bar {
     display: flex;
     align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
     margin-bottom: 24px;
-    padding: 14px 18px;
+    padding: 12px 18px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
+    scrollbar-width: thin;
   }
 
   .filter-label {
