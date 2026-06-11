@@ -537,8 +537,17 @@
     <span class="filter-label">Cuenta</span>
     <select id="accountFilter"><option value="">Todas las cuentas</option></select>
     <div class="filter-sep"></div>
-    <span class="filter-label">Campaña</span>
-    <select id="campaignFilter" style="max-width:260px"><option value="">Todas las campañas</option></select>
+    <span class="filter-label">Mercado</span>
+    <select id="marketFilter">
+      <option value="">Todos</option>
+      <option value="CO">🇨🇴 CO</option>
+      <option value="MX">🇲🇽 MX</option>
+      <option value="PE">🇵🇪 PE</option>
+      <option value="BR">🇧🇷 BR</option>
+    </select>
+    <div class="filter-sep"></div>
+    <span class="filter-label">Buscar campaña</span>
+    <input type="text" id="campaignSearch" placeholder="Pegá el nombre…" style="width:210px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-s);padding:7px 11px;font-size:12px;font-family:var(--font);outline:none;transition:border .2s;" onfocus="this.style.borderColor='var(--rappi)'" onblur="this.style.borderColor='var(--border)'" />
     <div class="filter-sep"></div>
     <div class="pill-group">
       <button class="pill active" data-range="30">30d</button>
@@ -679,6 +688,13 @@ function fmtNum(n) {
   return n.toFixed(0);
 }
 function detectCountry(str) {
+  // primary: second segment of underscore nomenclature e.g. "Rappi_CO_Brand"
+  const parts = (str || '').split('_');
+  if (parts.length >= 2) {
+    const seg = parts[1].toUpperCase().trim();
+    if (['CO','MX','PE','BR','AR','CL','EC','UY'].includes(seg)) return seg;
+  }
+  // fallback: keyword scan
   const s = (str || '').toUpperCase();
   if (s.includes('COLOMBIA') || s.includes(' CO ') || s.includes('_CO') || s.includes('COL')) return 'CO';
   if (s.includes('MEXICO') || s.includes('MÉXICO') || s.includes(' MX') || s.includes('_MX')) return 'MX';
@@ -757,12 +773,16 @@ function getFiltered() {
   const to       = new Date(document.getElementById('dateTo').value);
   const acct     = document.getElementById('accountFilter').value;
   const campaign = document.getElementById('campaignFilter').value;
+  const market   = document.getElementById('marketFilter').value;
+  const search   = document.getElementById('campaignSearch').value.toLowerCase().trim();
   to.setHours(23,59,59);
   return allRows.filter(r => {
     if (!r.dateStart) return false;
     if (r.dateStart < from || r.dateStart > to) return false;
     if (acct && r.account !== acct) return false;
     if (campaign && r.campaign !== campaign) return false;
+    if (market && detectCountry(r.campaign) !== market) return false;
+    if (search && !r.campaign.toLowerCase().includes(search)) return false;
     return true;
   });
 }
@@ -797,6 +817,8 @@ document.getElementById('accountFilter').addEventListener('change', () => {
   render();
 });
 document.getElementById('campaignFilter').addEventListener('change', render);
+document.getElementById('marketFilter').addEventListener('change', render);
+document.getElementById('campaignSearch').addEventListener('input', render);
 
 // ─── RENDER ─────────────────────────────────────────────
 function render() {
