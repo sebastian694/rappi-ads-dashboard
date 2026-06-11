@@ -558,6 +558,14 @@
     <select id="accountFilter"><option value="">Todas las cuentas</option></select>
     <div class="filter-sep"></div>
     <span class="filter-label">Mercado</span>
+    <span class="filter-label">Estado</span>
+    <select id="statusFilter">
+      <option value="">Todos</option>
+      <option value="ACTIVE">🟢 Activa</option>
+      <option value="PAUSED">⏸ Pausada</option>
+    </select>
+    <div class="filter-sep"></div>
+    <span class="filter-label">Mercado</span>
     <select id="marketFilter">
       <option value="">Todos</option>
       <option value="CO">🇨🇴 CO</option>
@@ -757,6 +765,7 @@ function processData(data) {
     dateStart:   parseDate(r['Date Start']   || r['date_start']   || ''),
     account:     (r['Account Name']  || r['account_name']  || '').trim(),
     campaign:    (r['Campaign Name'] || r['campaign_name'] || '').trim(),
+    status:      (r['Campaign Status'] || r['campaign_status'] || r['Status'] || '').trim().toUpperCase(),
     spend:       parseFloat((r['Amount Spent'] || r['amount_spent'] || '0').replace(/[,$]/g,'')) || 0,
     impressions: parseInt((r['Impressions'] || '0').replace(/[,$]/g,'')) || 0,
     clicks:      parseInt((r['Clicks'] || '0').replace(/[,$]/g,'')) || 0,
@@ -812,6 +821,7 @@ function getFiltered() {
   const acct     = document.getElementById('accountFilter').value;
   const campaign = document.getElementById('campaignFilter').value;
   const market   = document.getElementById('marketFilter').value;
+  const status   = document.getElementById('statusFilter').value;
   const search   = document.getElementById('campaignSearch').value.toLowerCase().trim();
   to.setHours(23,59,59);
   return allRows.filter(r => {
@@ -820,6 +830,7 @@ function getFiltered() {
     if (acct && r.account !== acct) return false;
     if (campaign && r.campaign !== campaign) return false;
     if (market && detectCountry(r.campaign) !== market) return false;
+    if (status && r.status !== status) return false;
     if (search && !r.campaign.toLowerCase().includes(search)) return false;
     return true;
   });
@@ -856,6 +867,7 @@ document.getElementById('accountFilter').addEventListener('change', () => {
 });
 document.getElementById('campaignFilter').addEventListener('change', render);
 document.getElementById('marketFilter').addEventListener('change', render);
+document.getElementById('statusFilter').addEventListener('change', render);
 document.getElementById('campaignSearch').addEventListener('input', render);
 
 // ─── RENDER ─────────────────────────────────────────────
