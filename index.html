@@ -705,7 +705,7 @@
 </footer>
 
 <script>
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSznBPkd5Gdtf99SZNp8p3bL_YlYUm9kW1mUyXn-XmDac4hQjun3Dm8Qjg7tCp28Orf6J54on4xMKFz/pub?gid=1612237197&single=true&output=csv';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyWFqFAv15jOVFR8DF0cu7y1iC309UB7NiEK8UNvsPN1BAfNFY1LYrZnUKozDt36Tg/exec';
 
 let allRows = [];
 let charts  = {};
@@ -749,26 +749,14 @@ function detectCountry(str) {
 function loadData() {
   document.getElementById('loading').style.display = 'flex';
   document.querySelector('#loading p').textContent = 'Cargando datos de campañas…';
-  const proxied = 'https://corsproxy.io/?' + encodeURIComponent(CSV_URL + '&cb=' + Date.now());
-  fetch(proxied)
-    .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
-    .then(csv => {
-      const { data } = Papa.parse(csv, { header: true, skipEmptyLines: true });
+  fetch(API_URL)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(data => {
       if (!data.length) throw new Error('empty');
       processData(data);
     })
-    .catch(err => {
-      // fallback: try direct fetch without proxy
-      fetch(CSV_URL + '&cb=' + Date.now())
-        .then(r => r.text())
-        .then(csv => {
-          const { data } = Papa.parse(csv, { header: true, skipEmptyLines: true });
-          if (!data.length) throw new Error('empty');
-          processData(data);
-        })
-        .catch(() => {
-          document.querySelector('#loading p').textContent = 'Error al cargar datos. Verificá la conexión e intentá de nuevo.';
-        });
+    .catch(() => {
+      document.querySelector('#loading p').textContent = 'Error al cargar datos. Verificá la conexión e intentá de nuevo.';
     });
 }
 
