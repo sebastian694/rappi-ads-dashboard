@@ -482,14 +482,13 @@
 
   .search-select-panel {
     display: none;
-    position: absolute;
-    top: calc(100% + 6px); left: 0;
+    position: fixed;
     width: 300px;
     background: var(--surface2);
     border: 1px solid var(--rappi);
     border-radius: var(--radius-s);
-    z-index: 200;
-    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    z-index: 999;
+    box-shadow: 0 8px 24px rgba(0,0,0,.5);
     overflow: hidden;
   }
   .search-select.open .search-select-panel { display: block; }
@@ -1006,6 +1005,11 @@ document.getElementById('campaignBtn').addEventListener('click', e => {
   const opening = !dd.classList.contains('open');
   dd.classList.toggle('open');
   if (opening) {
+    // position panel below the button using fixed coords
+    const rect = document.getElementById('campaignBtn').getBoundingClientRect();
+    const panel = document.getElementById('campaignPanel');
+    panel.style.top  = (rect.bottom + 6) + 'px';
+    panel.style.left = rect.left + 'px';
     const input = document.getElementById('campaignSearch');
     input.value = '';
     const campaigns = [...new Set(getCampaignPool().map(r => r.campaign))].filter(Boolean).sort();
