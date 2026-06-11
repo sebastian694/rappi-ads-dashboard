@@ -40,6 +40,20 @@
     --font: 'Poppins', system-ui, sans-serif;
   }
 
+  /* ── light mode ── */
+  body.light {
+    --bg:       #F4F5F8;
+    --surface:  #FFFFFF;
+    --surface2: #EEF0F5;
+    --surface3: #E2E5EE;
+    --border:   rgba(0,0,0,.08);
+    --border-h: rgba(255,68,26,.4);
+    --text:     #111827;
+    --text2:    #374151;
+    --muted:    #9CA3AF;
+    --rappi-dim: rgba(255,68,26,.08);
+  }
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
@@ -585,6 +599,9 @@
   <div class="topbar-right">
     <div class="live-badge"><span class="live-dot"></span>Live</div>
     <span class="last-updated" id="lastUpdated"></span>
+    <button class="refresh-btn" id="themeToggle" onclick="toggleTheme()" title="Cambiar modo">
+      <svg id="themeIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
     <button class="refresh-btn" onclick="loadData()">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
       Actualizar
@@ -1281,6 +1298,25 @@ document.querySelectorAll('[data-compound]').forEach(btn => {
     updateCompoundChart(getFiltered());
   });
 });
+
+// ─── THEME ──────────────────────────────────────────────
+const MOON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/></svg>`;
+const SUN  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('themeToggle').innerHTML =
+    (isLight ? MOON : SUN);
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+}
+
+// restore saved theme
+if (localStorage.getItem('theme') === 'light') {
+  document.body.classList.add('light');
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('themeToggle').innerHTML = MOON;
+  });
+}
 
 // ─── INIT ───────────────────────────────────────────────
 loadData();
