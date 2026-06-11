@@ -748,15 +748,27 @@ function detectCountry(str) {
 // ─── LOAD ────────────────────────────────────────────────
 function loadData() {
   document.getElementById('loading').style.display = 'flex';
-  const url = CSV_URL + '&cb=' + Date.now();
-  fetch(url)
+  document.querySelector('#loading p').textContent = 'Cargando datos de campañas…';
+  const proxied = 'https://corsproxy.io/?' + encodeURIComponent(CSV_URL + '&cb=' + Date.now());
+  fetch(proxied)
     .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
     .then(csv => {
       const { data } = Papa.parse(csv, { header: true, skipEmptyLines: true });
+      if (!data.length) throw new Error('empty');
       processData(data);
     })
-    .catch(() => {
-      document.querySelector('#loading p').textContent = 'Error al cargar. Verificá la conexión.';
+    .catch(err => {
+      // fallback: try direct fetch without proxy
+      fetch(CSV_URL + '&cb=' + Date.now())
+        .then(r => r.text())
+        .then(csv => {
+          const { data } = Papa.parse(csv, { header: true, skipEmptyLines: true });
+          if (!data.length) throw new Error('empty');
+          processData(data);
+        })
+        .catch(() => {
+          document.querySelector('#loading p').textContent = 'Error al cargar datos. Verificá la conexión e intentá de nuevo.';
+        });
     });
 }
 
