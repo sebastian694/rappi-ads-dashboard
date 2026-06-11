@@ -949,7 +949,6 @@ function getFiltered() {
     if (!r.dateStart) return false;
     if (r.dateStart < from || r.dateStart > to) return false;
     if (acct && r.account !== acct) return false;
-    if (campaign && r.campaign !== campaign) return false;
     if (selectedCampaign && r.campaign !== selectedCampaign) return false;
     if (market && detectCountry(r.campaign) !== market) return false;
     if (status && r.status !== status) return false;
