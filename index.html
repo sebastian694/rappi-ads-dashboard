@@ -741,35 +741,39 @@ function detectCountry(str) {
 function loadData() {
   document.getElementById('loading').style.display = 'flex';
   const url = CSV_URL + '&cb=' + Date.now();
-  Papa.parse(url, {
-    download: true, header: true, skipEmptyLines: true,
-    complete: ({ data }) => {
-      allRows = data.map(r => ({
-        dateStart:   parseDate(r['Date Start']   || r['date_start']   || ''),
-        account:     (r['Account Name']  || r['account_name']  || '').trim(),
-        campaign:    (r['Campaign Name'] || r['campaign_name'] || '').trim(),
-        spend:       parseFloat((r['Amount Spent'] || r['amount_spent'] || '0').replace(/[,$]/g,'')) || 0,
-        impressions: parseInt((r['Impressions'] || '0').replace(/[,$]/g,'')) || 0,
-        clicks:      parseInt((r['Clicks'] || '0').replace(/[,$]/g,'')) || 0,
-        ctr:         parseFloat((r['CTR'] || '0').replace(/[%,$]/g,'')) || 0,
-        cpc:         parseFloat((r['CPC'] || '0').replace(/[,$]/g,'')) || 0,
-        cpm:         parseFloat((r['CPM'] || '0').replace(/[,$]/g,'')) || 0,
-      })).filter(r => r.dateStart);
-
-      populateFilters();
-      setDefaultDates();
-      document.getElementById('loading').style.display    = 'none';
-      document.getElementById('mainContent').style.display = 'block';
-      document.getElementById('heroBar').style.display     = 'block';
-      document.getElementById('footerBar').style.display   = 'flex';
-      document.getElementById('lastUpdated').textContent   =
-        'Actualizado ' + new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
-      render();
-    },
-    error: () => {
+  fetch(url)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+    .then(csv => {
+      const { data } = Papa.parse(csv, { header: true, skipEmptyLines: true });
+      processData(data);
+    })
+    .catch(() => {
       document.querySelector('#loading p').textContent = 'Error al cargar. Verificá la conexión.';
-    }
-  });
+    });
+}
+
+function processData(data) {
+  allRows = data.map(r => ({
+    dateStart:   parseDate(r['Date Start']   || r['date_start']   || ''),
+    account:     (r['Account Name']  || r['account_name']  || '').trim(),
+    campaign:    (r['Campaign Name'] || r['campaign_name'] || '').trim(),
+    spend:       parseFloat((r['Amount Spent'] || r['amount_spent'] || '0').replace(/[,$]/g,'')) || 0,
+    impressions: parseInt((r['Impressions'] || '0').replace(/[,$]/g,'')) || 0,
+    clicks:      parseInt((r['Clicks'] || '0').replace(/[,$]/g,'')) || 0,
+    ctr:         parseFloat((r['CTR'] || '0').replace(/[%,$]/g,'')) || 0,
+    cpc:         parseFloat((r['CPC'] || '0').replace(/[,$]/g,'')) || 0,
+    cpm:         parseFloat((r['CPM'] || '0').replace(/[,$]/g,'')) || 0,
+  })).filter(r => r.dateStart);
+
+  populateFilters();
+  setDefaultDates();
+  document.getElementById('loading').style.display     = 'none';
+  document.getElementById('mainContent').style.display = 'block';
+  document.getElementById('heroBar').style.display     = 'block';
+  document.getElementById('footerBar').style.display   = 'flex';
+  document.getElementById('lastUpdated').textContent   =
+    'Actualizado ' + new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+  render();
 }
 
 // ─── FILTERS SETUP ──────────────────────────────────────
