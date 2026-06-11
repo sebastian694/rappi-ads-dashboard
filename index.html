@@ -789,7 +789,12 @@ function parseDate(s) {
   const d = new Date(match[1] + 'T00:00:00');
   return isNaN(d) ? null : d;
 }
-function fmt(d) { return d.toISOString().slice(0,10); }
+function fmt(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
 function fmtMoney(n) {
   if (n >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
   if (n >= 1e3) return '$' + (n/1e3).toFixed(1) + 'K';
