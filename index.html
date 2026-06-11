@@ -479,6 +479,24 @@
       <span class="logo-text">Rappi</span>
     </div>
     <div class="topbar-divider"></div>
+    <!-- ABN Digital logo -->
+    <div style="display:flex;align-items:center;gap:4px;line-height:1;">
+      <span style="font-family:'Poppins',sans-serif;font-size:14px;font-weight:800;color:#0f2235;background:#fff;padding:3px 2px 3px 6px;border-radius:5px 0 0 5px;letter-spacing:.5px;">ABN</span><span style="font-family:'Poppins',sans-serif;font-size:14px;font-weight:300;color:#0f2235;background:#fff;padding:3px 6px 3px 2px;border-radius:0 5px 5px 0;letter-spacing:.5px;"> DIGITAL.</span>
+    </div>
+    <div class="topbar-divider"></div>
+    <!-- Meta logo SVG -->
+    <svg width="52" height="20" viewBox="0 0 52 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+      <defs>
+        <linearGradient id="metaGrad1" x1="0" y1="10" x2="52" y2="10" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#0082FB"/>
+          <stop offset="100%" stop-color="#0196FF"/>
+        </linearGradient>
+      </defs>
+      <!-- ∞ shape -->
+      <path d="M26 10C26 10 22.5 3.5 17.5 3.5C13.5 3.5 11 6.5 11 10C11 13.5 13.5 16.5 17.5 16.5C21 16.5 23.5 13.5 26 10Z" stroke="url(#metaGrad1)" stroke-width="2.8" fill="none"/>
+      <path d="M26 10C26 10 29.5 3.5 34.5 3.5C38.5 3.5 41 6.5 41 10C41 13.5 38.5 16.5 34.5 16.5C31 16.5 28.5 13.5 26 10Z" stroke="url(#metaGrad1)" stroke-width="2.8" fill="none"/>
+    </svg>
+    <div class="topbar-divider"></div>
     <div class="topbar-subtitle"><strong>Meta Ads</strong> · Marcas Dashboard</div>
   </div>
   <div class="topbar-right">
@@ -517,7 +535,10 @@
     <input type="date" id="dateTo" />
     <div class="filter-sep"></div>
     <span class="filter-label">Cuenta</span>
-    <select id="accountFilter"><option value="">Todas</option></select>
+    <select id="accountFilter"><option value="">Todas las cuentas</option></select>
+    <div class="filter-sep"></div>
+    <span class="filter-label">Campaña</span>
+    <select id="campaignFilter" style="max-width:260px"><option value="">Todas las campañas</option></select>
     <div class="filter-sep"></div>
     <div class="pill-group">
       <button class="pill active" data-range="30">30d</button>
@@ -707,6 +728,21 @@ function populateFilters() {
   const sel = document.getElementById('accountFilter');
   sel.innerHTML = '<option value="">Todas las cuentas</option>';
   accounts.forEach(a => { const o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o); });
+  populateCampaigns(allRows);
+}
+
+function populateCampaigns(rows) {
+  const campaigns = [...new Set(rows.map(r => r.campaign))].filter(Boolean).sort();
+  const sel = document.getElementById('campaignFilter');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Todas las campañas</option>';
+  campaigns.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c;
+    o.textContent = c.length > 50 ? c.slice(0, 50) + '…' : c;
+    sel.appendChild(o);
+  });
+  if (campaigns.includes(current)) sel.value = current;
 }
 function setDefaultDates() {
   const dates = allRows.map(r=>r.dateStart).filter(Boolean).sort((a,b)=>a-b);
@@ -717,14 +753,16 @@ function setDefaultDates() {
   document.getElementById('dateTo').value   = fmt(to);
 }
 function getFiltered() {
-  const from = new Date(document.getElementById('dateFrom').value);
-  const to   = new Date(document.getElementById('dateTo').value);
-  const acct = document.getElementById('accountFilter').value;
+  const from     = new Date(document.getElementById('dateFrom').value);
+  const to       = new Date(document.getElementById('dateTo').value);
+  const acct     = document.getElementById('accountFilter').value;
+  const campaign = document.getElementById('campaignFilter').value;
   to.setHours(23,59,59);
   return allRows.filter(r => {
     if (!r.dateStart) return false;
     if (r.dateStart < from || r.dateStart > to) return false;
     if (acct && r.account !== acct) return false;
+    if (campaign && r.campaign !== campaign) return false;
     return true;
   });
 }
@@ -750,7 +788,15 @@ document.querySelectorAll('.pill').forEach(p => {
 });
 document.getElementById('dateFrom').addEventListener('change', render);
 document.getElementById('dateTo').addEventListener('change', render);
-document.getElementById('accountFilter').addEventListener('change', render);
+document.getElementById('accountFilter').addEventListener('change', () => {
+  // repopulate campaigns based on selected account
+  const acct = document.getElementById('accountFilter').value;
+  const rows = acct ? allRows.filter(r => r.account === acct) : allRows;
+  populateCampaigns(rows);
+  document.getElementById('campaignFilter').value = '';
+  render();
+});
+document.getElementById('campaignFilter').addEventListener('change', render);
 
 // ─── RENDER ─────────────────────────────────────────────
 function render() {
