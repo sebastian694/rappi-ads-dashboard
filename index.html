@@ -765,6 +765,7 @@
             <th data-col="ctr">CTR %</th>
             <th data-col="cpc">CPC</th>
             <th data-col="cpm">CPM</th>
+            <th>Preview</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -855,6 +856,7 @@ function processData(data) {
     ctr:         parseFloat(r['CTR'])          || 0,
     cpc:         parseFloat(r['CPC'])          || 0,
     cpm:         parseFloat(r['CPM'])          || 0,
+    previewLink: String(r['Ad Shareable Preview Link'] || '').trim(),
   })).filter(r => r.dateStart);
 
   populateFilters();
@@ -1218,10 +1220,11 @@ function updateTable(rows) {
   const map = {};
   rows.forEach(r => {
     const k = r.campaign+'|||'+r.account;
-    if (!map[k]) map[k] = { campaign:r.campaign, account:r.account, spend:0, impressions:0, clicks:0, ctr_s:0, cpc_s:0, cpm_s:0, n:0 };
+    if (!map[k]) map[k] = { campaign:r.campaign, account:r.account, spend:0, impressions:0, clicks:0, ctr_s:0, cpc_s:0, cpm_s:0, n:0, previewLink:'' };
     const m = map[k];
     m.spend+=r.spend; m.impressions+=r.impressions; m.clicks+=r.clicks;
     m.ctr_s+=r.ctr; m.cpc_s+=r.cpc; m.cpm_s+=r.cpm; m.n++;
+    if (!m.previewLink && r.previewLink) m.previewLink = r.previewLink;
   });
   let agg = Object.values(map).map(m=>({ ...m, ctr:m.ctr_s/m.n, cpc:m.cpc_s/m.n, cpm:m.cpm_s/m.n }));
 
@@ -1240,6 +1243,7 @@ function updateTable(rows) {
       <td>${r.ctr.toFixed(2)}%</td>
       <td>$${r.cpc.toFixed(3)}</td>
       <td>$${r.cpm.toFixed(2)}</td>
+      <td>${r.previewLink ? `<a href="${r.previewLink}" target="_blank" style="color:var(--rappi-light);font-size:11px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;border:1px solid rgba(255,107,64,.3);border-radius:6px;padding:3px 8px;white-space:nowrap;" onmouseover="this.style.background='var(--rappi-dim)'" onmouseout="this.style.background='transparent'">Ver ad ↗</a>` : '<span style="color:var(--muted)">—</span>'}</td>
     </tr>
   `).join('');
 }
