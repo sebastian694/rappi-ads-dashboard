@@ -931,12 +931,12 @@ function getCampaignPool() {
   return acct ? allRows.filter(r => r.account === acct) : allRows;
 }
 function setDefaultDates() {
-  const dates = allRows.map(r=>r.dateStart).filter(Boolean).sort((a,b)=>a-b);
-  if (!dates.length) return;
-  const to = dates[dates.length-1];
-  const from = new Date(to); from.setDate(from.getDate()-29);
-  document.getElementById('dateFrom').value = fmt(from);
-  document.getElementById('dateTo').value   = fmt(to);
+  const today = new Date();
+  document.getElementById('dateFrom').value = fmt(today);
+  document.getElementById('dateTo').value   = fmt(today);
+  // mark Hoy pill as active
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  document.querySelector('.pill[data-range="today"]').classList.add('active');
 }
 function getFiltered() {
   const from   = new Date(document.getElementById('dateFrom').value + 'T00:00:00');
