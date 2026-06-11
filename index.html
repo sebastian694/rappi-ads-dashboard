@@ -235,6 +235,12 @@
   select:focus, input[type="date"]:focus { border-color: var(--rappi); }
   input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.5); cursor: pointer; }
 
+  .pill-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
   .pill-group { display: flex; gap: 6px; }
   .pill {
     background: transparent;
@@ -642,7 +648,9 @@
       <option value="PE">🇵🇪 PE</option>
       <option value="BR">🇧🇷 BR</option>
     </select>
-    <div class="filter-sep"></div>
+  </div>
+  <div class="pill-row">
+    <span class="filter-label">Período rápido</span>
     <div class="pill-group">
       <button class="pill" data-range="today">Hoy</button>
       <button class="pill" data-range="yesterday">Ayer</button>
