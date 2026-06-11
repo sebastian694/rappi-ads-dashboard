@@ -450,6 +450,62 @@
     font-size: 13px; color: var(--rappi);
   }
 
+  /* ── searchable dropdown ── */
+  .search-select { position: relative; }
+  .search-select-btn {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: var(--radius-s);
+    padding: 7px 11px;
+    font-size: 12px; font-weight: 500;
+    font-family: var(--font);
+    cursor: pointer; white-space: nowrap;
+    max-width: 220px; min-width: 160px;
+    transition: border .2s;
+  }
+  .search-select-btn span {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; text-align: left;
+  }
+  .search-select-btn svg { flex-shrink: 0; color: var(--muted); transition: transform .2s; }
+  .search-select.open .search-select-btn { border-color: var(--rappi); }
+  .search-select.open .search-select-btn svg { transform: rotate(180deg); }
+
+  .search-select-panel {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px); left: 0;
+    width: 300px;
+    background: var(--surface2);
+    border: 1px solid var(--rappi);
+    border-radius: var(--radius-s);
+    z-index: 200;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    overflow: hidden;
+  }
+  .search-select.open .search-select-panel { display: block; }
+
+  .search-select-input {
+    width: 100%; padding: 9px 12px;
+    background: var(--surface3);
+    border: none; border-bottom: 1px solid var(--border);
+    color: var(--text); font-size: 12px; font-family: var(--font);
+    outline: none;
+  }
+  .search-select-list {
+    max-height: 240px; overflow-y: auto;
+  }
+  .search-select-option {
+    padding: 8px 12px;
+    font-size: 12px; cursor: pointer;
+    color: var(--text2);
+    transition: background .12s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .search-select-option:hover { background: var(--surface3); color: var(--text); }
+  .search-select-option.selected { color: var(--rappi); background: var(--rappi-dim); }
+
   /* ── chart pills ── */
   .cpill {
     background: transparent;
@@ -558,7 +614,16 @@
     <select id="accountFilter"><option value="">Todas las cuentas</option></select>
     <div class="filter-sep"></div>
     <span class="filter-label">Campaña</span>
-    <select id="campaignFilter" style="max-width:220px"><option value="">Todas</option></select>
+    <div class="search-select" id="campaignDropdown">
+      <button class="search-select-btn" id="campaignBtn" type="button">
+        <span id="campaignBtnLabel">Todas las campañas</span>
+        <svg width="10" height="10" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+      <div class="search-select-panel" id="campaignPanel">
+        <input type="text" id="campaignSearch" class="search-select-input" placeholder="Buscar campaña…" autocomplete="off" />
+        <div class="search-select-list" id="campaignList"></div>
+      </div>
+    </div>
     <div class="filter-sep"></div>
     <span class="filter-label">Estado</span>
     <select id="statusFilter">
@@ -575,9 +640,6 @@
       <option value="PE">🇵🇪 PE</option>
       <option value="BR">🇧🇷 BR</option>
     </select>
-    <div class="filter-sep"></div>
-    <span class="filter-label">Buscar campaña</span>
-    <input type="text" id="campaignSearch" placeholder="Pegá el nombre…" style="width:200px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-s);padding:7px 11px;font-size:12px;font-family:var(--font);outline:none;transition:border .2s;" onfocus="this.style.borderColor='var(--rappi)'" onblur="this.style.borderColor='var(--border)'" />
     <div class="filter-sep"></div>
     <div class="pill-group">
       <button class="pill active" data-range="30">30d</button>
@@ -796,18 +858,58 @@ function populateFilters() {
   populateCampaigns(allRows);
 }
 
+let selectedCampaign = '';
+
 function populateCampaigns(rows) {
   const campaigns = [...new Set(rows.map(r => r.campaign))].filter(Boolean).sort();
-  const sel = document.getElementById('campaignFilter');
-  const current = sel.value;
-  sel.innerHTML = '<option value="">Todas las campañas</option>';
-  campaigns.forEach(c => {
-    const o = document.createElement('option');
-    o.value = c;
-    o.textContent = c.length > 50 ? c.slice(0, 50) + '…' : c;
-    sel.appendChild(o);
+  renderCampaignList(campaigns, '');
+}
+
+function renderCampaignList(campaigns, query) {
+  const list = document.getElementById('campaignList');
+  const filtered = query
+    ? campaigns.filter(c => c.toLowerCase().includes(query.toLowerCase()))
+    : campaigns;
+
+  list.innerHTML = '';
+
+  // "Todas" option
+  const all = document.createElement('div');
+  all.className = 'search-select-option' + (selectedCampaign === '' ? ' selected' : '');
+  all.textContent = 'Todas las campañas';
+  all.addEventListener('click', () => { selectedCampaign = ''; closeCampaignDropdown(); render(); });
+  list.appendChild(all);
+
+  filtered.forEach(c => {
+    const div = document.createElement('div');
+    div.className = 'search-select-option' + (selectedCampaign === c ? ' selected' : '');
+    div.textContent = c;
+    div.title = c;
+    div.addEventListener('click', () => { selectedCampaign = c; closeCampaignDropdown(); render(); });
+    list.appendChild(div);
   });
-  if (campaigns.includes(current)) sel.value = current;
+
+  if (filtered.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'search-select-option';
+    empty.style.color = 'var(--muted)';
+    empty.textContent = 'Sin resultados';
+    list.appendChild(empty);
+  }
+}
+
+function closeCampaignDropdown() {
+  document.getElementById('campaignDropdown').classList.remove('open');
+  const label = selectedCampaign
+    ? (selectedCampaign.length > 28 ? selectedCampaign.slice(0, 28) + '…' : selectedCampaign)
+    : 'Todas las campañas';
+  document.getElementById('campaignBtnLabel').textContent = label;
+}
+
+// get all campaigns for current account filter
+function getCampaignPool() {
+  const acct = document.getElementById('accountFilter').value;
+  return acct ? allRows.filter(r => r.account === acct) : allRows;
 }
 function setDefaultDates() {
   const dates = allRows.map(r=>r.dateStart).filter(Boolean).sort((a,b)=>a-b);
@@ -821,19 +923,17 @@ function getFiltered() {
   const from     = new Date(document.getElementById('dateFrom').value);
   const to       = new Date(document.getElementById('dateTo').value);
   const acct     = document.getElementById('accountFilter').value;
-  const campaign = document.getElementById('campaignFilter').value;
-  const market   = document.getElementById('marketFilter').value;
-  const status   = document.getElementById('statusFilter').value;
-  const search   = document.getElementById('campaignSearch').value.toLowerCase().trim();
+  const market = document.getElementById('marketFilter').value;
+  const status = document.getElementById('statusFilter').value;
   to.setHours(23,59,59);
   return allRows.filter(r => {
     if (!r.dateStart) return false;
     if (r.dateStart < from || r.dateStart > to) return false;
     if (acct && r.account !== acct) return false;
     if (campaign && r.campaign !== campaign) return false;
+    if (selectedCampaign && r.campaign !== selectedCampaign) return false;
     if (market && detectCountry(r.campaign) !== market) return false;
     if (status && r.status !== status) return false;
-    if (search && !r.campaign.toLowerCase().includes(search)) return false;
     return true;
   });
 }
@@ -863,14 +963,37 @@ document.getElementById('accountFilter').addEventListener('change', () => {
   // repopulate campaigns based on selected account
   const acct = document.getElementById('accountFilter').value;
   const rows = acct ? allRows.filter(r => r.account === acct) : allRows;
-  populateCampaigns(rows);
-  document.getElementById('campaignFilter').value = '';
+  selectedCampaign = '';
+  populateCampaigns(getCampaignPool());
+  closeCampaignDropdown();
   render();
 });
-document.getElementById('campaignFilter').addEventListener('change', render);
 document.getElementById('marketFilter').addEventListener('change', render);
 document.getElementById('statusFilter').addEventListener('change', render);
-document.getElementById('campaignSearch').addEventListener('input', render);
+
+// ── searchable campaign dropdown ──
+document.getElementById('campaignBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  const dd = document.getElementById('campaignDropdown');
+  const opening = !dd.classList.contains('open');
+  dd.classList.toggle('open');
+  if (opening) {
+    const input = document.getElementById('campaignSearch');
+    input.value = '';
+    const campaigns = [...new Set(getCampaignPool().map(r => r.campaign))].filter(Boolean).sort();
+    renderCampaignList(campaigns, '');
+    input.focus();
+  }
+});
+document.getElementById('campaignSearch').addEventListener('input', e => {
+  const campaigns = [...new Set(getCampaignPool().map(r => r.campaign))].filter(Boolean).sort();
+  renderCampaignList(campaigns, e.target.value);
+});
+document.addEventListener('click', e => {
+  if (!document.getElementById('campaignDropdown').contains(e.target)) {
+    document.getElementById('campaignDropdown').classList.remove('open');
+  }
+});
 
 // ─── RENDER ─────────────────────────────────────────────
 function render() {
