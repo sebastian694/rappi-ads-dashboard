@@ -1215,7 +1215,7 @@ function processAdsData(data) {
     ctr:         parseFloat(r['CTR'])          || 0,
     cpc:         parseFloat(r['CPC'])          || 0,
     cpm:         parseFloat(r['CPM'])          || 0,
-    preview:     String(r['Ad Shareable Preview Link'] || r['Ad shareable preview link'] || r['ad shareable preview link'] || r['Preview Link'] || r['preview_link'] || '').trim(),
+    preview:     String(r['Ad Shareable Preview Link'] || r['Ad shareable preview link'] || r['ad shareable preview link'] || r['Preview Link'] || r['preview_link'] || r[''] || Object.values(r).find(v => typeof v === 'string' && v.startsWith('https://fb.me')) || '').trim(),
   })).filter(r => r.date);
 
   renderCreatives();
@@ -1306,7 +1306,7 @@ function processData(data) {
     ctr:         parseFloat(r['CTR'])          || 0,
     cpc:         parseFloat(r['CPC'])          || 0,
     cpm:         parseFloat(r['CPM'])          || 0,
-    previewLink: String(r['Ad Shareable Preview Link'] || '').trim(),
+    previewLink: String(r['Ad Shareable Preview Link'] || r[''] || Object.values(r).find(v => typeof v === 'string' && v.startsWith('https://fb.me')) || '').trim(),
   })).filter(r => r.dateStart);
 
   populateFilters();
