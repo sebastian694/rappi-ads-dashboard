@@ -618,6 +618,96 @@
   body.light .creative-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.12); }
   body.light .creative-preview-wrap { background: #e8eaf0; }
 
+  /* ── RappAI chat ── */
+  .rappai-fab {
+    position: fixed; bottom: 28px; right: 28px; z-index: 1000;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: linear-gradient(135deg, #FF441A, #A259FF);
+    border: none; cursor: pointer; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 20px rgba(255,68,26,.45);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .rappai-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(255,68,26,.6); }
+
+  .rappai-panel {
+    position: fixed; bottom: 92px; right: 28px; z-index: 1000;
+    width: 340px; height: 480px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 16px 48px rgba(0,0,0,.5);
+    display: flex; flex-direction: column;
+    transform: translateY(16px) scale(.97); opacity: 0; pointer-events: none;
+    transition: transform .22s cubic-bezier(.4,0,.2,1), opacity .22s;
+  }
+  .rappai-panel.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: all; }
+
+  .rappai-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .rappai-title {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 13px; font-weight: 700; color: var(--text);
+  }
+  .rappai-badge {
+    font-size: 9px; font-weight: 700; padding: 2px 6px;
+    background: rgba(34,197,94,.15); color: #22c55e;
+    border-radius: 20px; letter-spacing: .4px;
+  }
+  .rappai-close {
+    background: none; border: none; color: var(--muted);
+    font-size: 13px; cursor: pointer; padding: 2px 6px; border-radius: 4px;
+    transition: color .15s;
+  }
+  .rappai-close:hover { color: var(--text); }
+
+  .chat-messages {
+    flex: 1; overflow-y: auto; padding: 14px 14px 8px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .chat-messages::-webkit-scrollbar { width: 4px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
+
+  .chat-msg { max-width: 85%; padding: 9px 12px; border-radius: 12px; font-size: 12px; line-height: 1.55; }
+  .chat-msg-bot {
+    background: var(--surface2); color: var(--text);
+    border: 1px solid var(--border);
+    border-bottom-left-radius: 4px; align-self: flex-start;
+  }
+  .chat-msg-user {
+    background: linear-gradient(135deg, #FF441A, #A259FF);
+    color: #fff; border-bottom-right-radius: 4px;
+    align-self: flex-end;
+  }
+
+  .chat-input-wrap {
+    display: flex; gap: 8px; padding: 12px 14px;
+    border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  .chat-input {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 11px;
+    color: var(--text); font-size: 12px; font-family: var(--font);
+    outline: none;
+  }
+  .chat-input:focus { border-color: #FF441A; }
+  .chat-input::placeholder { color: var(--muted); }
+  .chat-send {
+    background: linear-gradient(135deg, #FF441A, #A259FF);
+    border: none; border-radius: 8px;
+    width: 34px; height: 34px; cursor: pointer; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: opacity .15s;
+  }
+  .chat-send:hover { opacity: .85; }
+
+  body.light .rappai-panel { box-shadow: 0 16px 48px rgba(0,0,0,.18); }
+  body.light .chat-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
+
   /* ── target panel ── */
   .target-card { overflow: hidden; }
   .target-panel { display: flex; flex-direction: column; gap: 12px; padding: 2px 2px 4px; overflow-y: auto; max-height: 270px; }
@@ -1732,6 +1822,247 @@ if (localStorage.getItem('theme') === 'light') {
 
 // ─── INIT ───────────────────────────────────────────────
 loadData();
+
+// ─── RAPPAI QUERY ENGINE ────────────────────────────────
+function normalizeStr(s) {
+  return (s || '').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s\-_]/g, ' ').trim();
+}
+
+function findCampaign(query) {
+  const q = normalizeStr(query);
+  const all = [...new Set([...allRows, ...allAdsRows].map(r => r.campaign))];
+  // exact suffix match (e.g. "bbr-4658")
+  let match = all.find(c => normalizeStr(c).includes(q) || q.includes(normalizeStr(c).split('_').slice(-1)[0]));
+  if (!match) {
+    // partial: any token of query found in campaign name
+    const tokens = q.split(/\s+/).filter(t => t.length > 3);
+    match = all.find(c => tokens.some(t => normalizeStr(c).includes(t)));
+  }
+  return match || null;
+}
+
+function aggregateRows(rows, campaignFilter) {
+  const filtered = campaignFilter ? rows.filter(r => r.campaign === campaignFilter) : rows;
+  if (!filtered.length) return null;
+  const spend       = filtered.reduce((s, r) => s + r.spend, 0);
+  const clicks      = filtered.reduce((s, r) => s + r.clicks, 0);
+  const impressions = filtered.reduce((s, r) => s + r.impressions, 0);
+  const ctr         = impressions > 0 ? (clicks / impressions * 100) : 0;
+  const cpc         = clicks > 0      ? (spend / clicks)              : 0;
+  const cpm         = impressions > 0 ? (spend / impressions * 1000)  : 0;
+  return { spend, clicks, impressions, ctr, cpc, cpm, count: filtered.length };
+}
+
+function bestCampaign(metric, direction) {
+  const map = {};
+  allRows.forEach(r => {
+    if (!map[r.campaign]) map[r.campaign] = { spend:0, clicks:0, impressions:0 };
+    map[r.campaign].spend       += r.spend;
+    map[r.campaign].clicks      += r.clicks;
+    map[r.campaign].impressions += r.impressions;
+  });
+  const entries = Object.entries(map).map(([name, v]) => {
+    const ctr = v.impressions > 0 ? v.clicks / v.impressions * 100 : 0;
+    const cpc = v.clicks > 0      ? v.spend / v.clicks              : 0;
+    const cpm = v.impressions > 0 ? v.spend / v.impressions * 1000  : 0;
+    return { name, ...v, ctr, cpc, cpm };
+  });
+  if (!entries.length) return null;
+  const sorted = entries.sort((a, b) => direction === 'asc' ? a[metric] - b[metric] : b[metric] - a[metric]);
+  return sorted[0];
+}
+
+function targetStatus(campaignName) {
+  const t = TARGETS.find(t => t.campaign === campaignName);
+  if (!t) return null;
+  const rows = allRows.filter(r => r.campaign === campaignName);
+  const clicks = rows.reduce((s, r) => s + r.clicks, 0);
+  const spend  = rows.reduce((s, r) => s + r.spend, 0);
+  const cpc    = clicks > 0 ? spend / clicks : null;
+  return {
+    targetClicks: t.targetClicks, clicks,
+    clickPct: (clicks / t.targetClicks * 100).toFixed(1),
+    budget: t.budget, spend,
+    budgetPct: (spend / t.budget * 100).toFixed(1),
+    cpc, cpcTarget: CPC_TARGET,
+    duration: t.duration
+  };
+}
+
+function rappaiQuery(input) {
+  const q  = normalizeStr(input);
+  const all = allRows.length > 0;
+
+  if (!all) return '⏳ Todavía no hay datos cargados. Esperá un momento y volvé a preguntar.';
+
+  // ── SALUDOS ──
+  if (/^(hola|buenas|buen dia|hey|hi|hello)/.test(q))
+    return '¡Hola! Soy **RappAI** 👋 Puedo responder preguntas sobre las campañas y creativos. Probá con:\n- *"Resumen general"*\n- *"CPC de BBR-4658"*\n- *"Qué campaña tiene más clics"*\n- *"Cómo viene el budget"*';
+
+  // ── AYUDA ──
+  if (/ayuda|que (podes|puedes|sabes)|comandos|ejemplos/.test(q))
+    return '**Puedo responder sobre:**\n\n📊 **Métricas** → "CPC de BBR-4658", "CTR de la campaña"\n🏆 **Rankings** → "qué campaña tiene más clics", "mejor CTR"\n💰 **Budget** → "cómo viene el presupuesto", "cuánto se gastó"\n🎯 **Targets** → "avance de BBR-4659", "cómo viene el objetivo"\n📋 **Resumen** → "resumen general", "dame un resumen"\n\nUsá el nombre corto de la campaña (BBR-4658, BBR-4659, BBR-4665).';
+
+  // ── RESUMEN GENERAL ──
+  if (/resumen|overview|general|total|todo/.test(q) && !/campaña|campaign/.test(q)) {
+    const a = aggregateRows(allRows, null);
+    const camps = [...new Set(allRows.map(r => r.campaign))].length;
+    const days  = [...new Set(allRows.map(r => r.dateStart && r.dateStart.toISOString().slice(0,10)).filter(Boolean))].length;
+    return `**Resumen general** (período seleccionado)\n\n💰 **Inversión total:** $${a.spend.toFixed(2)}\n👆 **Clics totales:** ${a.clicks.toLocaleString()}\n👁 **Impresiones:** ${a.impressions.toLocaleString()}\n📈 **CTR promedio:** ${a.ctr.toFixed(2)}%\n⚡ **CPC promedio:** $${a.cpc.toFixed(3)}\n📢 **CPM promedio:** $${a.cpm.toFixed(2)}\n\n🗂 **Campañas activas:** ${camps} · 📅 **Días con datos:** ${days}`;
+  }
+
+  // ── TARGETS / AVANCE ──
+  if (/avance|target|objetivo|progreso|como viene|cómo viene|budget|presupuesto/.test(q)) {
+    const campName = findCampaign(q);
+    if (campName) {
+      const s = targetStatus(campName);
+      const short = campName.split('_').slice(-2).join('_');
+      if (!s) return `No encontré target configurado para **${short}**.`;
+      const cpcMsg = s.cpc !== null
+        ? (s.cpc <= s.cpcTarget ? `✅ CPC $${s.cpc.toFixed(3)} — bajo el límite de $${s.cpcTarget}` : `⚠️ CPC $${s.cpc.toFixed(3)} — supera el límite de $${s.cpcTarget}`)
+        : '— sin datos de CPC';
+      return `**Avance: ${short}**\n\n🖱 **Clics:** ${s.clicks.toLocaleString()} / ${s.targetClicks.toLocaleString()} (${s.clickPct}%)\n💰 **Budget:** $${s.spend.toFixed(2)} / $${s.budget} (${s.budgetPct}%)\n${cpcMsg}\n⏱ Duración: ${s.duration} días`;
+    }
+    // avance de todas las campañas
+    const lines = TARGETS.map(t => {
+      const s = targetStatus(t.campaign);
+      const short = t.campaign.split('_').slice(-2).join('_');
+      return `**${short}:** Clics ${s.clickPct}% · Budget ${s.budgetPct}%`;
+    });
+    return `**Avance vs Targets**\n\n${lines.join('\n')}`;
+  }
+
+  // ── MEJOR / PEOR CAMPAÑA ──
+  const isBest  = /mejor|mas clics|más clics|mayor inversion|mayor inversión|mas gasto|mayor ctr|menor cpc|mas barato|más barato/.test(q);
+  const isWorst = /peor|menor ctr|mayor cpc|mas caro|más caro|menos clics|menor inversion/.test(q);
+  if (isBest || isWorst) {
+    let metric = 'spend', dir = isWorst ? 'asc' : 'desc', label = 'inversión';
+    if (/clic/.test(q))      { metric = 'clicks';      label = 'clics'; }
+    if (/impresion/.test(q)) { metric = 'impressions'; label = 'impresiones'; }
+    if (/ctr/.test(q))       { metric = 'ctr'; dir = isWorst ? 'asc' : 'desc'; label = 'CTR'; }
+    if (/cpc/.test(q))       { metric = 'cpc'; dir = isWorst ? 'desc' : 'asc'; label = 'CPC'; }
+    if (/cpm/.test(q))       { metric = 'cpm'; dir = isWorst ? 'desc' : 'asc'; label = 'CPM'; }
+    const b = bestCampaign(metric, dir);
+    if (!b) return 'No hay datos suficientes para comparar.';
+    const short = b.name.split('_').slice(-2).join('_');
+    const val = metric === 'spend' ? `$${b[metric].toFixed(2)}` :
+                metric === 'ctr'   ? `${b[metric].toFixed(2)}%` :
+                metric === 'cpc' || metric === 'cpm' ? `$${b[metric].toFixed(3)}` :
+                b[metric].toLocaleString();
+    return `La campaña con ${isWorst ? 'menor' : 'mayor'} **${label}** es:\n\n🏆 **${short}**\n${label}: **${val}**\n\nInversión: $${b.spend.toFixed(2)} · Clics: ${b.clicks.toLocaleString()} · CTR: ${b.ctr.toFixed(2)}%`;
+  }
+
+  // ── MÉTRICA ESPECÍFICA DE UNA CAMPAÑA ──
+  const campName = findCampaign(q);
+  if (campName) {
+    const short = campName.split('_').slice(-2).join('_');
+    // datos de ads también
+    const adsAgg = allAdsRows.length ? aggregateRows(allAdsRows, campName) : null;
+    const a = aggregateRows(allRows, campName) || adsAgg;
+    if (!a) return `No encontré datos para **${short}** en el período seleccionado.`;
+
+    if (/cpc/.test(q))  return `**CPC de ${short}:** $${a.cpc.toFixed(4)}\n_(${a.clicks.toLocaleString()} clics · $${a.spend.toFixed(2)} invertidos)_`;
+    if (/ctr/.test(q))  return `**CTR de ${short}:** ${a.ctr.toFixed(2)}%\n_(${a.clicks.toLocaleString()} clics / ${a.impressions.toLocaleString()} impresiones)_`;
+    if (/cpm/.test(q))  return `**CPM de ${short}:** $${a.cpm.toFixed(2)}\n_(cada 1.000 impresiones)_`;
+    if (/clic/.test(q)) return `**Clics de ${short}:** ${a.clicks.toLocaleString()}\n_(CTR ${a.ctr.toFixed(2)}% · CPC $${a.cpc.toFixed(4)})_`;
+    if (/impresion/.test(q)) return `**Impresiones de ${short}:** ${a.impressions.toLocaleString()}\n_(CTR ${a.ctr.toFixed(2)}% · CPM $${a.cpm.toFixed(2)})_`;
+    if (/gasto|inversion|inversión|spend|presupuesto/.test(q)) return `**Inversión de ${short}:** $${a.spend.toFixed(2)}\n_(${a.clicks.toLocaleString()} clics · ${a.impressions.toLocaleString()} impresiones)_`;
+
+    // resumen de esa campaña
+    const ts = targetStatus(campName);
+    const targetLine = ts ? `\n\n🎯 **Target clics:** ${ts.clicks.toLocaleString()} / ${ts.targetClicks.toLocaleString()} (${ts.clickPct}%) · Budget $${ts.spend.toFixed(2)} / $${ts.budget} (${ts.budgetPct}%)` : '';
+    return `**${short}**\n\n💰 Inversión: $${a.spend.toFixed(2)}\n👆 Clics: ${a.clicks.toLocaleString()}\n👁 Impresiones: ${a.impressions.toLocaleString()}\n📈 CTR: ${a.ctr.toFixed(2)}%\n⚡ CPC: $${a.cpc.toFixed(4)}\n📢 CPM: $${a.cpm.toFixed(2)}${targetLine}`;
+  }
+
+  // ── CPC GLOBAL ──
+  if (/cpc/.test(q)) {
+    const a = aggregateRows(allRows, null);
+    return `**CPC promedio** (todas las campañas): $${a.cpc.toFixed(4)}\n_(límite configurado: $${CPC_TARGET})_`;
+  }
+  if (/ctr/.test(q)) {
+    const a = aggregateRows(allRows, null);
+    return `**CTR promedio** (todas las campañas): ${a.ctr.toFixed(2)}%`;
+  }
+  if (/cpm/.test(q)) {
+    const a = aggregateRows(allRows, null);
+    return `**CPM promedio** (todas las campañas): $${a.cpm.toFixed(2)}`;
+  }
+  if (/cuantas|cuántas|campañas activas|campañas hay/.test(q)) {
+    const camps = [...new Set(allRows.map(r => r.campaign))];
+    return `Hay **${camps.length} campañas** con datos en el período seleccionado.`;
+  }
+
+  return `No entendí bien la pregunta 🤔 Escribí **"ayuda"** para ver qué puedo responder, o intentá con algo como:\n- *"Resumen general"*\n- *"CPC de BBR-4658"*\n- *"Qué campaña tiene más clics"*`;
+}
+
+// ─── RAPPAI CHAT UI ─────────────────────────────────────
+function toggleChat() {
+  const panel = document.getElementById('rappaiPanel');
+  const isOpen = panel.classList.toggle('open');
+  if (isOpen && document.getElementById('chatMessages').children.length === 0) {
+    appendMessage('bot', '¡Hola! Soy **RappAI** 🤖 Preguntame sobre las campañas.\n\nEjemplos:\n- *"Resumen general"*\n- *"CPC de BBR-4658"*\n- *"Qué campaña tiene más clics"*\n- *"Cómo viene el target"*');
+  }
+}
+
+function appendMessage(role, text) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg chat-msg-' + role;
+  // simple markdown: bold, italic, newlines
+  const html = text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+  div.innerHTML = html;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  appendMessage('user', text);
+  setTimeout(() => {
+    const answer = rappaiQuery(text);
+    appendMessage('bot', answer);
+  }, 120);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const panel = document.getElementById('rappaiPanel');
+    if (panel.classList.contains('open')) panel.classList.remove('open');
+  }
+});
+
+// ─── INIT ───────────────────────────────────────────────
+loadData();
 </script>
+
+<!-- RAPPAI CHAT -->
+<button class="rappai-fab" onclick="toggleChat()" title="RappAI Assistant">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+</button>
+<div class="rappai-panel" id="rappaiPanel">
+  <div class="rappai-header">
+    <div class="rappai-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      RappAI <span class="rappai-badge">Live</span>
+    </div>
+    <button class="rappai-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div class="chat-messages" id="chatMessages"></div>
+  <div class="chat-input-wrap">
+    <input class="chat-input" id="chatInput" type="text" placeholder="Preguntá sobre las campañas…"
+      onkeydown="if(event.key==='Enter') sendChat()" />
+    <button class="chat-send" onclick="sendChat()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
 </body>
 </html>
