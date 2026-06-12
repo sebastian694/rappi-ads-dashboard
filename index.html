@@ -1074,11 +1074,10 @@ function getCampaignPool() {
 }
 function setDefaultDates() {
   const today = new Date();
-  document.getElementById('dateFrom').value = fmt(today);
+  const start = new Date(today.getFullYear(), today.getMonth(), 11);
+  document.getElementById('dateFrom').value = fmt(start);
   document.getElementById('dateTo').value   = fmt(today);
-  // mark Hoy pill as active
   document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-  document.querySelector('.pill[data-range="today"]').classList.add('active');
 }
 function getFiltered() {
   const from   = new Date(document.getElementById('dateFrom').value + 'T00:00:00');
