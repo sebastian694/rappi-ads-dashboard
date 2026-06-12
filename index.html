@@ -1220,8 +1220,24 @@ function loadData() {
   document.getElementById('loading').style.display = 'flex';
   document.querySelector('#loading p').textContent = 'Cargando datos de campañas…';
 
+  const SHEET_ID  = '15suz0MQKUQYbnEsrEXyyocF-r0xSPsZURJsVVb0FiAI';
+  const ADS_GID   = '1199860422';
+  const GVIZ_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${ADS_GID}`;
+
   const fetchCampaigns = fetch(API_URL).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
-  const fetchAds       = fetch(API_URL + '?sheet=ads').then(r => r.ok ? r.json() : []).catch(() => []);
+  const fetchAds = fetch(GVIZ_URL)
+    .then(r => r.text())
+    .then(text => {
+      // gviz returns: /*O_o*/\ngoogle.visualization.Query.setResponse({...});
+      const json = JSON.parse(text.replace(/^[^\{]+/, '').replace(/;?\s*$/, ''));
+      const cols = json.table.cols.map(c => c.label);
+      return json.table.rows.map(row => {
+        const obj = {};
+        row.c.forEach((cell, i) => { obj[cols[i]] = cell ? cell.v : ''; });
+        return obj;
+      });
+    })
+    .catch(() => []);
 
   Promise.all([fetchCampaigns, fetchAds])
     .then(([campaigns, ads]) => {
