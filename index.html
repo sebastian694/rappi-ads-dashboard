@@ -1341,9 +1341,9 @@ function updateTargetPanel(rows) {
     const clickPct  = Math.min(100, t.targetClicks > 0 ? (a.clicks / t.targetClicks) * 100 : 0);
     const budgetPct = Math.min(100, t.budget > 0 ? (a.spend / t.budget) * 100 : 0);
     const actualCpc = a.clicks > 0 ? a.spend / a.clicks : null;
-    // CPC: lower is better — bar fills to 100% when on target, shrinks when over
-    const cpcPct    = actualCpc !== null ? Math.min(100, (CPC_TARGET / actualCpc) * 100) : 0;
-    const cpcColor  = actualCpc === null ? '#555' : actualCpc <= CPC_TARGET ? '#22c55e' : actualCpc <= CPC_TARGET * 1.5 ? '#F5A623' : '#ef4444';
+    // CPC: lower is better — bar fills as CPC approaches the limit; green = under, red = over
+    const cpcPct    = actualCpc !== null ? Math.min(100, (actualCpc / CPC_TARGET) * 100) : 0;
+    const cpcColor  = actualCpc === null ? '#555' : actualCpc <= CPC_TARGET * 0.75 ? '#22c55e' : actualCpc <= CPC_TARGET ? '#4C8EFF' : actualCpc <= CPC_TARGET * 1.3 ? '#F5A623' : '#ef4444';
     const shortName = t.campaign.split('_').slice(-2).join('_');
     const avgPct = (clickPct + budgetPct) / 2;
     const [badgeClass, badgeLabel] = statusBadge(avgPct);
@@ -1388,8 +1388,8 @@ function updateTargetPanel(rows) {
                 <span class="target-bar-type">CPC</span>
               </div>
               <div style="display:flex;align-items:center;gap:6px;">
-                <span class="target-bar-values">${actualCpc !== null ? '$'+actualCpc.toFixed(3) : '—'} / $${CPC_TARGET.toFixed(2)} objetivo</span>
-                <span class="target-bar-pct" style="color:${cpcColor}">${actualCpc !== null ? (actualCpc <= CPC_TARGET ? '✓' : '+'+((actualCpc/CPC_TARGET-1)*100).toFixed(0)+'%') : '—'}</span>
+                <span class="target-bar-values">${actualCpc !== null ? '$'+actualCpc.toFixed(3) : '—'} / $${CPC_TARGET.toFixed(2)} límite</span>
+                <span class="target-bar-pct" style="color:${cpcColor}">${actualCpc !== null ? (actualCpc <= CPC_TARGET ? '✓ bajo límite' : '⚠ +'+((actualCpc/CPC_TARGET-1)*100).toFixed(0)+'%') : '—'}</span>
               </div>
             </div>
             <div class="target-bar-track"><div class="target-bar-fill" style="width:${cpcPct}%;background:${cpcColor}"></div></div>
