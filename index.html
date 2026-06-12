@@ -1708,7 +1708,7 @@ function updateTargetPanel(rows) {
         <span class="tc-cpc-icon">⚡</span>
         <div class="tc-cpc-info">
           <div class="tc-cpc-top">
-            <span class="tc-cpc-label">CPC</span>
+            <span class="tc-cpc-label">CPC <span style="color:var(--muted);font-weight:400;font-size:9px;">límite $${CPC_TARGET.toFixed(2)}</span></span>
             <span class="tc-cpc-tag" style="background:${cpcTagBg};color:${cpcColor}">${cpcTag}</span>
           </div>
           <span class="tc-cpc-val" style="color:${cpcColor}">${actualCpc !== null ? '$'+actualCpc.toFixed(2) : '—'}</span>
