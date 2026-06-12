@@ -715,52 +715,77 @@
   body.light .rappai-panel { box-shadow: 0 16px 48px rgba(0,0,0,.18); }
   body.light .chat-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
 
-  /* ── target panel ── */
-  .target-card { overflow: hidden; }
-  .target-panel { display: flex; flex-direction: column; gap: 12px; padding: 2px 2px 4px; overflow-y: auto; max-height: 270px; }
-  .target-panel::-webkit-scrollbar { width: 4px; }
-  .target-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
-
-  .target-row {
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.07);
-    border-radius: 10px;
-    padding: 10px 12px;
-    display: flex; flex-direction: column; gap: 8px;
+  /* ── target section ── */
+  .target-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px 24px;
+    margin-bottom: 14px;
   }
-  .target-row-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .target-name { font-size: 10px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .target-status-badge {
-    font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 20px;
+  .target-section-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+  .target-section-title { font-size: 16px; font-weight: 700; color: var(--text); }
+  .target-section-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  .target-cards-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 900px) { .target-cards-row { grid-template-columns: 1fr; } }
+
+  .tc-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 16px;
+    position: relative; overflow: hidden;
+  }
+  .tc-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    border-radius: 14px 14px 0 0;
+  }
+  .tc-card.accent-0::before { background: linear-gradient(90deg, #FF441A, #A259FF); }
+  .tc-card.accent-1::before { background: linear-gradient(90deg, #4C8EFF, #A259FF); }
+  .tc-card.accent-2::before { background: linear-gradient(90deg, #22c55e, #4C8EFF); }
+
+  .tc-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .tc-name { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.4; }
+  .tc-sub  { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .tc-badge {
+    font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 20px;
     white-space: nowrap; flex-shrink: 0;
   }
-  .target-status-badge.status-low    { background: rgba(162,89,255,.18); color: #A259FF; }
-  .target-status-badge.status-mid    { background: rgba(76,142,255,.18); color: #4C8EFF; }
-  .target-status-badge.status-high   { background: rgba(245,166,35,.18); color: #F5A623; }
-  .target-status-badge.status-done   { background: rgba(34,197,94,.18);  color: #22c55e; }
-  .target-status-badge.status-over   { background: rgba(239,68,68,.18);  color: #ef4444; }
+  .tc-badge.status-low  { background: rgba(162,89,255,.18); color: #A259FF; }
+  .tc-badge.status-mid  { background: rgba(76,142,255,.18);  color: #4C8EFF; }
+  .tc-badge.status-high { background: rgba(245,166,35,.18);  color: #F5A623; }
+  .tc-badge.status-done { background: rgba(34,197,94,.18);   color: #22c55e; }
 
-  .target-metrics { display: flex; flex-direction: column; gap: 7px; }
-  .target-bar-wrap { display: flex; flex-direction: column; gap: 4px; }
-  .target-bar-label { display: flex; justify-content: space-between; align-items: center; }
-  .target-bar-meta { display: flex; align-items: center; gap: 5px; }
-  .target-bar-icon { font-size: 11px; }
-  .target-bar-type { font-size: 10px; font-weight: 600; color: var(--text); }
-  .target-bar-values { font-size: 9px; color: var(--muted); }
-  .target-bar-pct { font-size: 10px; font-weight: 700; }
+  .tc-rings { display: flex; justify-content: space-around; align-items: flex-start; padding: 4px 0; }
+  .tc-ring-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .tc-ring-bg  { fill: none; stroke: rgba(255,255,255,.08); }
+  .tc-ring-fg  { fill: none; stroke-linecap: round; transition: stroke-dashoffset .8s cubic-bezier(.4,0,.2,1); }
+  .tc-ring-meta { text-align: center; }
+  .tc-ring-name { font-size: 10px; font-weight: 600; color: var(--text); }
+  .tc-ring-vals { font-size: 9px; color: var(--muted); margin-top: 1px; }
 
-  .target-bar-track { background: rgba(255,255,255,.07); border-radius: 99px; height: 8px; overflow: hidden; position: relative; }
-  .target-bar-fill { height: 100%; border-radius: 99px; transition: width .6s cubic-bezier(.4,0,.2,1); position: relative; }
-  .target-bar-fill::after {
-    content: '';
-    position: absolute; right: 0; top: 0; bottom: 0; width: 6px;
-    background: rgba(255,255,255,.35);
-    border-radius: 99px;
+  .tc-cpc-row {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,.04); border-radius: 10px;
+    padding: 10px 14px;
   }
+  .tc-cpc-icon { font-size: 14px; flex-shrink: 0; }
+  .tc-cpc-info { flex: 1; min-width: 0; }
+  .tc-cpc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+  .tc-cpc-label { font-size: 10px; font-weight: 600; color: var(--text); }
+  .tc-cpc-tag  { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
+  .tc-cpc-val  { font-size: 18px; font-weight: 800; margin-bottom: 6px; display: block; }
+  .tc-cpc-track { height: 6px; background: rgba(255,255,255,.07); border-radius: 99px; overflow: hidden; }
+  .tc-cpc-fill  { height: 100%; border-radius: 99px; transition: width .7s cubic-bezier(.4,0,.2,1); }
 
-  body.light .target-row { background: rgba(0,0,0,.03); border-color: rgba(0,0,0,.07); }
-  body.light .target-bar-track { background: rgba(0,0,0,.07); }
-  body.light .target-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
+  .charts-row-full { grid-template-columns: 1fr !important; }
+  body.light .tc-card { border-color: rgba(0,0,0,.08); }
+  body.light .tc-ring-bg { stroke: rgba(0,0,0,.07); }
+  body.light .tc-cpc-row { background: rgba(0,0,0,.03); }
+  body.light .tc-cpc-track { background: rgba(0,0,0,.07); }
 
   /* ── searchable dropdown ── */
   .search-select { position: relative; }
@@ -981,8 +1006,19 @@
     </div>
   </div>
 
+  <!-- TARGET SECTION -->
+  <div class="target-section">
+    <div class="target-section-header">
+      <div>
+        <div class="target-section-title">Avance vs Target</div>
+        <div class="target-section-sub">Progreso de clics, presupuesto y CPC por campaña</div>
+      </div>
+    </div>
+    <div class="target-cards-row" id="targetPanel"></div>
+  </div>
+
   <!-- CHARTS ROW 1 -->
-  <div class="charts-row">
+  <div class="charts-row charts-row-full">
     <div class="chart-card">
       <div class="chart-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
         <div>
@@ -995,14 +1031,7 @@
           <button class="cpill" data-metric="impressions">Impresiones</button>
         </div>
       </div>
-      <div class="chart-wrap"><canvas id="chartSpend" height="210"></canvas></div>
-    </div>
-    <div class="chart-card target-card">
-      <div class="chart-header">
-        <div class="chart-title">Avance vs Target</div>
-        <div class="chart-sub">Clics y presupuesto por campaña</div>
-      </div>
-      <div id="targetPanel" class="target-panel"></div>
+      <div class="chart-wrap"><canvas id="chartSpend" height="160"></canvas></div>
     </div>
   </div>
 
@@ -1584,9 +1613,6 @@ function updateTargetPanel(rows) {
   const panel = document.getElementById('targetPanel');
   if (!panel) return;
 
-  const CPC_TARGET = 0.06;
-
-  // Aggregate actual clicks + spend per campaign (full name match)
   const actuals = {};
   rows.forEach(r => {
     const k = r.campaign;
@@ -1596,86 +1622,86 @@ function updateTargetPanel(rows) {
   });
 
   function statusBadge(pct) {
-    if (pct >= 100) return ['status-done',  '✓ Completado'];
-    if (pct >= 80)  return ['status-high',  '↑ En camino'];
-    if (pct >= 40)  return ['status-mid',   '→ En curso'];
-    return                  ['status-low',   '↓ Iniciando'];
-  }
-  function barGradient(pct, type) {
-    if (type === 'clicks') {
-      if (pct >= 100) return '#22c55e';
-      if (pct >= 60)  return 'linear-gradient(90deg,#4C8EFF,#A259FF)';
-      return 'linear-gradient(90deg,#A259FF,#7B3FE4)';
-    } else {
-      if (pct >= 100) return '#ef4444';
-      if (pct >= 80)  return 'linear-gradient(90deg,#F5A623,#ef4444)';
-      return 'linear-gradient(90deg,#FF441A,#F5A623)';
-    }
+    if (pct >= 100) return ['status-done', '✓ Completado'];
+    if (pct >= 80)  return ['status-high', '↑ En camino'];
+    if (pct >= 40)  return ['status-mid',  '→ En curso'];
+    return                  ['status-low',  '↓ Iniciando'];
   }
 
-  const html = TARGETS.map(t => {
-    const a = actuals[t.campaign] || { clicks: 0, spend: 0 };
-    const clickPct  = Math.min(100, t.targetClicks > 0 ? (a.clicks / t.targetClicks) * 100 : 0);
-    const budgetPct = Math.min(100, t.budget > 0 ? (a.spend / t.budget) * 100 : 0);
-    const actualCpc = a.clicks > 0 ? a.spend / a.clicks : null;
-    // CPC: lower is better — bar fills as CPC approaches the limit; green = under, red = over
-    const cpcPct    = actualCpc !== null ? Math.min(100, (actualCpc / CPC_TARGET) * 100) : 0;
-    const cpcColor  = actualCpc === null ? '#555' : actualCpc <= CPC_TARGET * 0.75 ? '#22c55e' : actualCpc <= CPC_TARGET ? '#4C8EFF' : actualCpc <= CPC_TARGET * 1.3 ? '#F5A623' : '#ef4444';
-    const shortName = t.campaign.split('_').slice(-2).join('_');
-    const avgPct = (clickPct + budgetPct) / 2;
-    const [badgeClass, badgeLabel] = statusBadge(avgPct);
-
+  function ring(pct, color, label, val1, val2) {
+    const r = 38, stroke = 7;
+    const circ = 2 * Math.PI * r;
+    const offset = circ * (1 - Math.min(pct, 100) / 100);
+    const size = (r + stroke) * 2 + 4;
+    const cx = size / 2;
     return `
-      <div class="target-row">
-        <div class="target-row-header">
-          <div class="target-name" title="${t.campaign}">${shortName}</div>
-          <span class="target-status-badge ${badgeClass}">${badgeLabel}</span>
-        </div>
-        <div class="target-metrics">
-          <div class="target-bar-wrap">
-            <div class="target-bar-label">
-              <div class="target-bar-meta">
-                <span class="target-bar-icon">🖱</span>
-                <span class="target-bar-type">Clics</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span class="target-bar-values">${a.clicks.toLocaleString()} / ${t.targetClicks.toLocaleString()}</span>
-                <span class="target-bar-pct" style="color:${clickPct>=100?'#22c55e':clickPct>=60?'#4C8EFF':'#A259FF'}">${clickPct.toFixed(0)}%</span>
-              </div>
-            </div>
-            <div class="target-bar-track"><div class="target-bar-fill" style="width:${clickPct}%;background:${barGradient(clickPct,'clicks')}"></div></div>
-          </div>
-          <div class="target-bar-wrap">
-            <div class="target-bar-label">
-              <div class="target-bar-meta">
-                <span class="target-bar-icon">💰</span>
-                <span class="target-bar-type">Budget</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span class="target-bar-values">$${a.spend.toFixed(0)} / $${t.budget}</span>
-                <span class="target-bar-pct" style="color:${budgetPct>=100?'#ef4444':budgetPct>=80?'#F5A623':'#FF441A'}">${budgetPct.toFixed(0)}%</span>
-              </div>
-            </div>
-            <div class="target-bar-track"><div class="target-bar-fill" style="width:${budgetPct}%;background:${barGradient(budgetPct,'budget')}"></div></div>
-          </div>
-          <div class="target-bar-wrap">
-            <div class="target-bar-label">
-              <div class="target-bar-meta">
-                <span class="target-bar-icon">⚡</span>
-                <span class="target-bar-type">CPC</span>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span class="target-bar-values">${actualCpc !== null ? '$'+actualCpc.toFixed(3) : '—'} / $${CPC_TARGET.toFixed(2)} límite</span>
-                <span class="target-bar-pct" style="color:${cpcColor}">${actualCpc !== null ? (actualCpc <= CPC_TARGET ? '✓ bajo límite' : '⚠ +'+((actualCpc/CPC_TARGET-1)*100).toFixed(0)+'%') : '—'}</span>
-              </div>
-            </div>
-            <div class="target-bar-track"><div class="target-bar-fill" style="width:${cpcPct}%;background:${cpcColor}"></div></div>
-          </div>
+      <div class="tc-ring-wrap">
+        <svg width="${size}" height="${size}" class="tc-ring-svg">
+          <circle class="tc-ring-bg" cx="${cx}" cy="${cx}" r="${r}" stroke-width="${stroke}"/>
+          <circle class="tc-ring-fg" cx="${cx}" cy="${cx}" r="${r}" stroke-width="${stroke}"
+            stroke="${color}"
+            stroke-dasharray="${circ.toFixed(1)}"
+            stroke-dashoffset="${offset.toFixed(1)}"
+            transform="rotate(-90 ${cx} ${cx})"/>
+          <text x="${cx}" y="${cx - 6}" class="tc-ring-label" font-size="13" font-weight="800" fill="${color}">${Math.min(pct,100).toFixed(0)}%</text>
+          <text x="${cx}" y="${cx + 10}" class="tc-ring-label" font-size="9" fill="#8892AA">${label}</text>
+        </svg>
+        <div class="tc-ring-meta">
+          <div class="tc-ring-name">${val1}</div>
+          <div class="tc-ring-vals">${val2}</div>
         </div>
       </div>`;
-  }).join('');
+  }
 
-  panel.innerHTML = html;
+  panel.innerHTML = TARGETS.map((t, i) => {
+    const a = actuals[t.campaign] || { clicks: 0, spend: 0 };
+    const clickPct  = t.targetClicks > 0 ? (a.clicks / t.targetClicks) * 100 : 0;
+    const budgetPct = t.budget > 0 ? (a.spend / t.budget) * 100 : 0;
+    const actualCpc = a.clicks > 0 ? a.spend / a.clicks : null;
+    const cpcPct    = actualCpc !== null ? Math.min(100, (actualCpc / CPC_TARGET) * 100) : 0;
+    const cpcColor  = actualCpc === null ? '#555'
+      : actualCpc <= CPC_TARGET * 0.75 ? '#22c55e'
+      : actualCpc <= CPC_TARGET        ? '#4C8EFF'
+      : actualCpc <= CPC_TARGET * 1.3  ? '#F5A623' : '#ef4444';
+    const cpcTag    = actualCpc === null ? '—'
+      : actualCpc <= CPC_TARGET ? '✓ bajo límite' : `⚠ +${((actualCpc/CPC_TARGET-1)*100).toFixed(0)}%`;
+    const cpcTagBg  = actualCpc !== null && actualCpc <= CPC_TARGET
+      ? 'rgba(34,197,94,.15)' : 'rgba(245,166,35,.15)';
+
+    const clickColor  = clickPct  >= 100 ? '#22c55e' : clickPct  >= 60 ? '#4C8EFF' : '#A259FF';
+    const budgetColor = budgetPct >= 100 ? '#ef4444' : budgetPct >= 80 ? '#F5A623' : '#FF441A';
+
+    const shortName = t.campaign.split('_').slice(-2).join('_');
+    const [badgeClass, badgeLabel] = statusBadge((clickPct + budgetPct) / 2);
+
+    return `
+    <div class="tc-card accent-${i}">
+      <div class="tc-header">
+        <div>
+          <div class="tc-name">${shortName}</div>
+          <div class="tc-sub">${t.duration} días · ${t.targetClicks.toLocaleString()} clics target</div>
+        </div>
+        <span class="tc-badge ${badgeClass}">${badgeLabel}</span>
+      </div>
+      <div class="tc-rings">
+        ${ring(clickPct,  clickColor,  'Clics',  a.clicks.toLocaleString(), `/ ${t.targetClicks.toLocaleString()}`)}
+        ${ring(budgetPct, budgetColor, 'Budget', `$${a.spend.toFixed(0)}`,  `/ $${t.budget}`)}
+      </div>
+      <div class="tc-cpc-row">
+        <span class="tc-cpc-icon">⚡</span>
+        <div class="tc-cpc-info">
+          <div class="tc-cpc-top">
+            <span class="tc-cpc-label">CPC</span>
+            <span class="tc-cpc-tag" style="background:${cpcTagBg};color:${cpcColor}">${cpcTag}</span>
+          </div>
+          <span class="tc-cpc-val" style="color:${cpcColor}">${actualCpc !== null ? '$'+actualCpc.toFixed(3) : '—'}</span>
+          <div class="tc-cpc-track">
+            <div class="tc-cpc-fill" style="width:${cpcPct}%;background:${cpcColor}"></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function updateCharts(rows) {
