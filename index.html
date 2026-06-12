@@ -1778,6 +1778,11 @@ function updateTable(rows) {
     m.spend+=r.spend; m.impressions+=r.impressions; m.clicks+=r.clicks;
     m.ctr_s+=r.ctr; m.cpc_s+=r.cpc; m.cpm_s+=r.cpm; m.n++;
     if (!m.previewLink && r.previewLink) m.previewLink = r.previewLink;
+    // fallback: look up preview from ads sheet
+    if (!m.previewLink && allAdsRows.length) {
+      const ad = allAdsRows.find(a => a.campaign === r.campaign && a.preview);
+      if (ad) m.previewLink = ad.preview;
+    }
   });
   let agg = Object.values(map).map(m=>({ ...m, ctr:m.ctr_s/m.n, cpc:m.cpc_s/m.n, cpm:m.cpm_s/m.n }));
 
