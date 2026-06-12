@@ -617,6 +617,17 @@
   body.light .creative-card { box-shadow: 0 1px 4px rgba(0,0,0,.06); }
   body.light .creative-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.12); }
   body.light .creative-preview-wrap { background: #e8eaf0; }
+  a.deep-dive-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, #FF441A, #A259FF);
+    color: #fff; font-size: 11px; font-weight: 700;
+    padding: 7px 14px; border-radius: 8px;
+    text-decoration: none; white-space: nowrap;
+    transition: opacity .15s, transform .15s;
+  }
+  a.deep-dive-btn:hover { opacity: .88; transform: translateY(-1px); }
+  body.light a.deep-dive-btn { color: #fff; }
+
   a.preview-link {
     color: var(--rappi-light); font-size: 11px; text-decoration: none;
     display: inline-flex; align-items: center; gap: 4px;
@@ -1098,6 +1109,10 @@
         <span class="table-title">Análisis de creativos</span>
         <span class="table-count" id="creativesCount">0 ads</span>
       </div>
+      <a class="deep-dive-btn" href="https://dashboards.hikethecloud.com/a4906860-de14-4b94-ad7a-cc26fe4a1096/rappi_dashboard.html?v=1" target="_blank" rel="noopener">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Deep Dive Creatives ↗
+      </a>
       <input class="table-search" type="text" id="creativesSearch" placeholder="Buscar campaña o cuenta…" />
     </div>
     <div class="table-wrap">
