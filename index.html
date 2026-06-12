@@ -647,6 +647,22 @@
     transition: transform .2s, box-shadow .2s;
   }
   .rappai-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(255,68,26,.6); }
+  .rappai-fab-wrap {
+    position: fixed; bottom: 28px; right: 28px; z-index: 1000;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer;
+  }
+  .rappai-fab-wrap .rappai-fab { position: static; }
+  .rappai-fab-label {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 12px; font-weight: 600;
+    padding: 6px 12px; border-radius: 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.3);
+    white-space: nowrap;
+    pointer-events: none;
+  }
 
   .rappai-panel {
     position: fixed; bottom: 92px; right: 28px; z-index: 1000;
@@ -2116,9 +2132,12 @@ loadData();
 </script>
 
 <!-- RAPPAI CHAT -->
-<button class="rappai-fab" onclick="toggleChat()" title="RappAI Assistant">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-</button>
+<div class="rappai-fab-wrap" onclick="toggleChat()">
+  <button class="rappai-fab" title="RappAI Assistant">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  </button>
+  <span class="rappai-fab-label">RappAI Assistant</span>
+</div>
 <div class="rappai-panel" id="rappaiPanel">
   <div class="rappai-header">
     <div class="rappai-title">
