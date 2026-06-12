@@ -1110,7 +1110,6 @@
             <th data-col="ctr">CTR %</th>
             <th data-col="cpc">CPC</th>
             <th data-col="cpm">CPM</th>
-            <th>Preview</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -1220,24 +1219,8 @@ function loadData() {
   document.getElementById('loading').style.display = 'flex';
   document.querySelector('#loading p').textContent = 'Cargando datos de campañas…';
 
-  const SHEET_ID  = '15suz0MQKUQYbnEsrEXyyocF-r0xSPsZURJsVVb0FiAI';
-  const ADS_GID   = '1199860422';
-  const GVIZ_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${ADS_GID}`;
-
   const fetchCampaigns = fetch(API_URL).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
-  const fetchAds = fetch(GVIZ_URL)
-    .then(r => r.text())
-    .then(text => {
-      // gviz returns: /*O_o*/\ngoogle.visualization.Query.setResponse({...});
-      const json = JSON.parse(text.replace(/^[^\{]+/, '').replace(/;?\s*$/, ''));
-      const cols = json.table.cols.map(c => c.label);
-      return json.table.rows.map(row => {
-        const obj = {};
-        row.c.forEach((cell, i) => { obj[cols[i]] = cell ? cell.v : ''; });
-        return obj;
-      });
-    })
-    .catch(() => []);
+  const fetchAds       = fetch(API_URL + '?sheet=ads').then(r => r.ok ? r.json() : []).catch(() => []);
 
   Promise.all([fetchCampaigns, fetchAds])
     .then(([campaigns, ads]) => {
@@ -1842,12 +1825,6 @@ function updateTable(rows) {
     const m = map[k];
     m.spend+=r.spend; m.impressions+=r.impressions; m.clicks+=r.clicks;
     m.ctr_s+=r.ctr; m.cpc_s+=r.cpc; m.cpm_s+=r.cpm; m.n++;
-    if (!m.previewLink && r.previewLink) m.previewLink = r.previewLink;
-    // fallback: look up preview from ads sheet
-    if (!m.previewLink && allAdsRows.length) {
-      const ad = allAdsRows.find(a => a.campaign === r.campaign && a.preview);
-      if (ad) m.previewLink = ad.preview;
-    }
   });
   let agg = Object.values(map).map(m=>({ ...m, ctr:m.ctr_s/m.n, cpc:m.cpc_s/m.n, cpm:m.cpm_s/m.n }));
 
@@ -1866,7 +1843,6 @@ function updateTable(rows) {
       <td>${r.ctr.toFixed(2)}%</td>
       <td>$${r.cpc.toFixed(2)}</td>
       <td>$${r.cpm.toFixed(2)}</td>
-      <td>${r.previewLink ? `<a href="${r.previewLink}" target="_blank" style="color:var(--rappi-light);font-size:11px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;border:1px solid rgba(255,107,64,.3);border-radius:6px;padding:3px 8px;white-space:nowrap;" onmouseover="this.style.background='var(--rappi-dim)'" onmouseout="this.style.background='transparent'">Ver ad ↗</a>` : '<span style="color:var(--muted)">—</span>'}</td>
     </tr>
   `).join('');
 }
