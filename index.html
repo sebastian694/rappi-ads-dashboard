@@ -410,7 +410,7 @@
   /* ══════════════════ CHARTS ══════════════════ */
   .charts-row {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr;
     gap: 14px;
     margin-bottom: 14px;
   }
@@ -561,6 +561,25 @@
     font-family: 'Pacifico', cursive;
     font-size: 13px; color: var(--rappi);
   }
+
+  /* ── target panel ── */
+  .target-card { overflow: hidden; }
+  .target-panel { display: flex; flex-direction: column; gap: 14px; padding: 4px 2px 2px; overflow-y: auto; max-height: 260px; }
+  .target-panel::-webkit-scrollbar { width: 4px; }
+  .target-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
+  .target-row { display: flex; flex-direction: column; gap: 5px; }
+  .target-name { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .target-metrics { display: flex; flex-direction: column; gap: 4px; }
+  .target-bar-wrap { display: flex; flex-direction: column; gap: 2px; }
+  .target-bar-label { display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: var(--text); }
+  .target-bar-label span:last-child { color: var(--muted); font-size: 9px; }
+  .target-bar-track { background: rgba(255,255,255,.07); border-radius: 4px; height: 6px; overflow: hidden; }
+  .target-bar-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
+  .target-bar-fill.fill-clicks { background: linear-gradient(90deg, #4C8EFF, #A259FF); }
+  .target-bar-fill.fill-budget { background: linear-gradient(90deg, #FF441A, #F5A623); }
+  .target-divider { border: none; border-top: 1px solid var(--border); margin: 2px 0; }
+  body.light .target-bar-track { background: rgba(0,0,0,.07); }
+  body.light .target-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
 
   /* ── searchable dropdown ── */
   .search-select { position: relative; }
@@ -804,6 +823,13 @@
       </div>
       <div class="chart-wrap"><canvas id="chartDonut" height="210"></canvas></div>
     </div>
+    <div class="chart-card target-card">
+      <div class="chart-header">
+        <div class="chart-title">Avance vs Target</div>
+        <div class="chart-sub">Clics y presupuesto por campaña</div>
+      </div>
+      <div id="targetPanel" class="target-panel"></div>
+    </div>
   </div>
 
   <!-- CHARTS ROW 2 -->
@@ -868,6 +894,12 @@
 </footer>
 
 <script>
+const TARGETS = [
+  { campaign: 'MO_CO_XS_PS_FB_FAB_MOB_CPG_RAP_ALL_NA_00000_UK-P-145225_BBR-4658', duration: 7,  targetClicks: 2883, budget: 315 },
+  { campaign: 'MO_CO_XS_PS_FB_FAB_MOB_CPG_RAP_ALL_NA_00000_UK-P-145284_BBR-4659', duration: 4,  targetClicks: 4805, budget: 526 },
+  { campaign: 'MO_CO_XS_PS_FB_FAB_MOB_CPG_RAP_ALL_NA_00000_UK-P-145250_BBR-4665', duration: 6,  targetClicks: 1922, budget: 250 },
+];
+
 const API_URL = 'https://script.google.com/macros/s/AKfycbxOm7oChy-v03yLcSjpPDBKKVopZSdVsq1WtFqrmAD95og0WVrBZTwNHTd0Zco9r4lA/exec';
 
 let allRows = [];
@@ -1251,6 +1283,54 @@ function updateCompoundChart(rows) {
   buildLineChart('chartCtr', data, cfg, 190);
 }
 
+function updateTargetPanel(rows) {
+  const panel = document.getElementById('targetPanel');
+  if (!panel) return;
+
+  // Aggregate actual clicks + spend per campaign (full name match)
+  const actuals = {};
+  rows.forEach(r => {
+    const k = r.campaign;
+    if (!actuals[k]) actuals[k] = { clicks: 0, spend: 0 };
+    actuals[k].clicks += r.clicks;
+    actuals[k].spend  += r.spend;
+  });
+
+  const html = TARGETS.map((t, i) => {
+    const a = actuals[t.campaign] || { clicks: 0, spend: 0 };
+    const clickPct  = Math.min(100, t.targetClicks > 0 ? (a.clicks / t.targetClicks) * 100 : 0);
+    const budgetPct = Math.min(100, t.budget > 0 ? (a.spend / t.budget) * 100 : 0);
+    const shortName = t.campaign.split('_').slice(-2).join('_');
+
+    const clickColor  = clickPct  >= 100 ? '#22c55e' : clickPct  >= 60 ? '#4C8EFF' : '#A259FF';
+    const budgetColor = budgetPct >= 100 ? '#ef4444' : budgetPct >= 80 ? '#F5A623' : '#FF441A';
+
+    return `
+      ${i > 0 ? '<hr class="target-divider">' : ''}
+      <div class="target-row">
+        <div class="target-name" title="${t.campaign}">${shortName}</div>
+        <div class="target-metrics">
+          <div class="target-bar-wrap">
+            <div class="target-bar-label">
+              <span>Clics</span>
+              <span>${a.clicks.toLocaleString()} / ${t.targetClicks.toLocaleString()} &nbsp;(${clickPct.toFixed(0)}%)</span>
+            </div>
+            <div class="target-bar-track"><div class="target-bar-fill fill-clicks" style="width:${clickPct}%;background:${clickColor}"></div></div>
+          </div>
+          <div class="target-bar-wrap">
+            <div class="target-bar-label">
+              <span>Budget</span>
+              <span>$${a.spend.toFixed(0)} / $${t.budget} &nbsp;(${budgetPct.toFixed(0)}%)</span>
+            </div>
+            <div class="target-bar-track"><div class="target-bar-fill fill-budget" style="width:${budgetPct}%;background:${budgetColor}"></div></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  panel.innerHTML = html;
+}
+
 function updateCharts(rows) {
   updateSimpleChart(rows);
   updateCompoundChart(rows);
@@ -1277,6 +1357,9 @@ function updateCharts(rows) {
     }
   });
 
+
+  // ── Target panel ──
+  updateTargetPanel(rows);
 
   // ── CPC + CPM ──
   destroyChart('costs');
