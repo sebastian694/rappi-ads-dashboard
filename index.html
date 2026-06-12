@@ -1177,11 +1177,13 @@ let creativesSearchVal = '';
 // ─── HELPERS ────────────────────────────────────────────
 function parseDate(s) {
   if (!s) return null;
-  // Extract YYYY-MM-DD and parse as local midnight to avoid UTC offset issues
-  const match = String(s).match(/(\d{4}-\d{2}-\d{2})/);
-  if (!match) return null;
-  const d = new Date(match[1] + 'T00:00:00');
-  return isNaN(d) ? null : d;
+  const str = String(s).trim();
+  // YYYY-MM-DD
+  const iso = str.match(/(\d{4}-\d{2}-\d{2})/);
+  if (iso) { const d = new Date(iso[1] + 'T00:00:00'); if (!isNaN(d)) return d; }
+  // MM/DD/YYYY or DD/MM/YYYY (try native parse)
+  const d = new Date(str);
+  return isNaN(d) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 function fmt(d) {
   const y = d.getFullYear();
