@@ -564,20 +564,48 @@
 
   /* ── target panel ── */
   .target-card { overflow: hidden; }
-  .target-panel { display: flex; flex-direction: column; gap: 14px; padding: 4px 2px 2px; overflow-y: auto; max-height: 260px; }
+  .target-panel { display: flex; flex-direction: column; gap: 12px; padding: 2px 2px 4px; overflow-y: auto; max-height: 270px; }
   .target-panel::-webkit-scrollbar { width: 4px; }
   .target-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
-  .target-row { display: flex; flex-direction: column; gap: 5px; }
-  .target-name { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-  .target-metrics { display: flex; flex-direction: column; gap: 4px; }
-  .target-bar-wrap { display: flex; flex-direction: column; gap: 2px; }
-  .target-bar-label { display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: var(--text); }
-  .target-bar-label span:last-child { color: var(--muted); font-size: 9px; }
-  .target-bar-track { background: rgba(255,255,255,.07); border-radius: 4px; height: 6px; overflow: hidden; }
-  .target-bar-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
-  .target-bar-fill.fill-clicks { background: linear-gradient(90deg, #4C8EFF, #A259FF); }
-  .target-bar-fill.fill-budget { background: linear-gradient(90deg, #FF441A, #F5A623); }
-  .target-divider { border: none; border-top: 1px solid var(--border); margin: 2px 0; }
+
+  .target-row {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .target-row-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .target-name { font-size: 10px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .target-status-badge {
+    font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 20px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .target-status-badge.status-low    { background: rgba(162,89,255,.18); color: #A259FF; }
+  .target-status-badge.status-mid    { background: rgba(76,142,255,.18); color: #4C8EFF; }
+  .target-status-badge.status-high   { background: rgba(245,166,35,.18); color: #F5A623; }
+  .target-status-badge.status-done   { background: rgba(34,197,94,.18);  color: #22c55e; }
+  .target-status-badge.status-over   { background: rgba(239,68,68,.18);  color: #ef4444; }
+
+  .target-metrics { display: flex; flex-direction: column; gap: 7px; }
+  .target-bar-wrap { display: flex; flex-direction: column; gap: 4px; }
+  .target-bar-label { display: flex; justify-content: space-between; align-items: center; }
+  .target-bar-meta { display: flex; align-items: center; gap: 5px; }
+  .target-bar-icon { font-size: 11px; }
+  .target-bar-type { font-size: 10px; font-weight: 600; color: var(--text); }
+  .target-bar-values { font-size: 9px; color: var(--muted); }
+  .target-bar-pct { font-size: 10px; font-weight: 700; }
+
+  .target-bar-track { background: rgba(255,255,255,.07); border-radius: 99px; height: 8px; overflow: hidden; position: relative; }
+  .target-bar-fill { height: 100%; border-radius: 99px; transition: width .6s cubic-bezier(.4,0,.2,1); position: relative; }
+  .target-bar-fill::after {
+    content: '';
+    position: absolute; right: 0; top: 0; bottom: 0; width: 6px;
+    background: rgba(255,255,255,.35);
+    border-radius: 99px;
+  }
+
+  body.light .target-row { background: rgba(0,0,0,.03); border-color: rgba(0,0,0,.07); }
   body.light .target-bar-track { background: rgba(0,0,0,.07); }
   body.light .target-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
 
@@ -1289,33 +1317,64 @@ function updateTargetPanel(rows) {
     actuals[k].spend  += r.spend;
   });
 
-  const html = TARGETS.map((t, i) => {
+  function statusBadge(pct) {
+    if (pct >= 100) return ['status-done',  '✓ Completado'];
+    if (pct >= 80)  return ['status-high',  '↑ En camino'];
+    if (pct >= 40)  return ['status-mid',   '→ En curso'];
+    return                  ['status-low',   '↓ Iniciando'];
+  }
+  function barGradient(pct, type) {
+    if (type === 'clicks') {
+      if (pct >= 100) return '#22c55e';
+      if (pct >= 60)  return 'linear-gradient(90deg,#4C8EFF,#A259FF)';
+      return 'linear-gradient(90deg,#A259FF,#7B3FE4)';
+    } else {
+      if (pct >= 100) return '#ef4444';
+      if (pct >= 80)  return 'linear-gradient(90deg,#F5A623,#ef4444)';
+      return 'linear-gradient(90deg,#FF441A,#F5A623)';
+    }
+  }
+
+  const html = TARGETS.map(t => {
     const a = actuals[t.campaign] || { clicks: 0, spend: 0 };
     const clickPct  = Math.min(100, t.targetClicks > 0 ? (a.clicks / t.targetClicks) * 100 : 0);
     const budgetPct = Math.min(100, t.budget > 0 ? (a.spend / t.budget) * 100 : 0);
     const shortName = t.campaign.split('_').slice(-2).join('_');
-
-    const clickColor  = clickPct  >= 100 ? '#22c55e' : clickPct  >= 60 ? '#4C8EFF' : '#A259FF';
-    const budgetColor = budgetPct >= 100 ? '#ef4444' : budgetPct >= 80 ? '#F5A623' : '#FF441A';
+    const avgPct = (clickPct + budgetPct) / 2;
+    const [badgeClass, badgeLabel] = statusBadge(avgPct);
 
     return `
-      ${i > 0 ? '<hr class="target-divider">' : ''}
       <div class="target-row">
-        <div class="target-name" title="${t.campaign}">${shortName}</div>
+        <div class="target-row-header">
+          <div class="target-name" title="${t.campaign}">${shortName}</div>
+          <span class="target-status-badge ${badgeClass}">${badgeLabel}</span>
+        </div>
         <div class="target-metrics">
           <div class="target-bar-wrap">
             <div class="target-bar-label">
-              <span>Clics</span>
-              <span>${a.clicks.toLocaleString()} / ${t.targetClicks.toLocaleString()} &nbsp;(${clickPct.toFixed(0)}%)</span>
+              <div class="target-bar-meta">
+                <span class="target-bar-icon">🖱</span>
+                <span class="target-bar-type">Clics</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="target-bar-values">${a.clicks.toLocaleString()} / ${t.targetClicks.toLocaleString()}</span>
+                <span class="target-bar-pct" style="color:${clickPct>=100?'#22c55e':clickPct>=60?'#4C8EFF':'#A259FF'}">${clickPct.toFixed(0)}%</span>
+              </div>
             </div>
-            <div class="target-bar-track"><div class="target-bar-fill fill-clicks" style="width:${clickPct}%;background:${clickColor}"></div></div>
+            <div class="target-bar-track"><div class="target-bar-fill" style="width:${clickPct}%;background:${barGradient(clickPct,'clicks')}"></div></div>
           </div>
           <div class="target-bar-wrap">
             <div class="target-bar-label">
-              <span>Budget</span>
-              <span>$${a.spend.toFixed(0)} / $${t.budget} &nbsp;(${budgetPct.toFixed(0)}%)</span>
+              <div class="target-bar-meta">
+                <span class="target-bar-icon">💰</span>
+                <span class="target-bar-type">Budget</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span class="target-bar-values">$${a.spend.toFixed(0)} / $${t.budget}</span>
+                <span class="target-bar-pct" style="color:${budgetPct>=100?'#ef4444':budgetPct>=80?'#F5A623':'#FF441A'}">${budgetPct.toFixed(0)}%</span>
+              </div>
             </div>
-            <div class="target-bar-track"><div class="target-bar-fill fill-budget" style="width:${budgetPct}%;background:${budgetColor}"></div></div>
+            <div class="target-bar-track"><div class="target-bar-fill" style="width:${budgetPct}%;background:${barGradient(budgetPct,'budget')}"></div></div>
           </div>
         </div>
       </div>`;
