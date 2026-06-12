@@ -562,6 +562,60 @@
     font-size: 13px; color: var(--rappi);
   }
 
+  /* ── creatives grid ── */
+  .creatives-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    padding: 4px 2px 6px;
+  }
+  .creative-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .creative-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+  .creative-preview-wrap {
+    position: relative;
+    width: 100%; height: 180px;
+    background: #0d1017;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .creative-preview-wrap iframe {
+    width: 100%; height: 100%;
+    border: none; pointer-events: none;
+    transform: scale(0.85); transform-origin: center center;
+  }
+  .creative-preview-placeholder {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; color: var(--muted); font-size: 11px; height: 100%; width: 100%;
+  }
+  .creative-preview-placeholder svg { opacity: .3; }
+  .creative-preview-btn {
+    position: absolute; bottom: 8px; right: 8px;
+    background: rgba(255,68,26,.9); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 4px 10px;
+    border-radius: 20px; text-decoration: none;
+    backdrop-filter: blur(4px);
+    transition: background .15s;
+  }
+  .creative-preview-btn:hover { background: #FF441A; }
+  .creative-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .creative-name { font-size: 11px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .creative-campaign { font-size: 10px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .creative-kpis { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .creative-kpi { display: flex; flex-direction: column; gap: 2px; }
+  .creative-kpi-val { font-size: 13px; font-weight: 700; color: var(--text); }
+  .creative-kpi-lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+  .creative-kpis-row2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+  body.light .creative-card { box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  body.light .creative-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+  body.light .creative-preview-wrap { background: #e8eaf0; }
+
   /* ── target panel ── */
   .target-card { overflow: hidden; }
   .target-panel { display: flex; flex-direction: column; gap: 12px; padding: 2px 2px 4px; overflow-y: auto; max-height: 270px; }
@@ -907,6 +961,18 @@
     </div>
   </div>
 
+  <!-- CREATIVES -->
+  <div class="table-card" id="creativesSection" style="display:none;">
+    <div class="table-top">
+      <div class="table-top-left">
+        <span class="table-title">Análisis de creativos</span>
+        <span class="table-count" id="creativesCount">0 ads</span>
+      </div>
+      <input class="table-search" type="text" id="creativesSearch" placeholder="Buscar creativo o campaña…" />
+    </div>
+    <div id="creativesGrid" class="creatives-grid"></div>
+  </div>
+
 </main>
 
 <footer class="footer" id="footerBar" style="display:none;">
@@ -924,9 +990,11 @@ const TARGETS = [
 const API_URL = 'https://script.google.com/macros/s/AKfycbxOm7oChy-v03yLcSjpPDBKKVopZSdVsq1WtFqrmAD95og0WVrBZTwNHTd0Zco9r4lA/exec';
 
 let allRows = [];
+let allAdsRows = [];
 let charts  = {};
 let sortCol = 'spend', sortDir = -1;
 let tableSearchVal = '';
+let creativesSearchVal = '';
 
 // ─── HELPERS ────────────────────────────────────────────
 function parseDate(s) {
@@ -973,15 +1041,140 @@ function detectCountry(str) {
 function loadData() {
   document.getElementById('loading').style.display = 'flex';
   document.querySelector('#loading p').textContent = 'Cargando datos de campañas…';
-  fetch(API_URL)
-    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(data => {
-      if (!data.length) throw new Error('empty');
-      processData(data);
+
+  const fetchCampaigns = fetch(API_URL).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  const fetchAds       = fetch(API_URL + '?sheet=ads').then(r => r.ok ? r.json() : []).catch(() => []);
+
+  Promise.all([fetchCampaigns, fetchAds])
+    .then(([campaigns, ads]) => {
+      if (!campaigns.length) throw new Error('empty');
+      processData(campaigns);
+      processAdsData(ads);
     })
     .catch(() => {
       document.querySelector('#loading p').textContent = 'Error al cargar datos. Verificá la conexión e intentá de nuevo.';
     });
+}
+
+function processAdsData(data) {
+  allAdsRows = data.map(r => ({
+    date:        parseDate(r['Date'] || r['Date Start'] || ''),
+    account:     String(r['Account Name'] || '').trim(),
+    campaign:    String(r['Campaign Name'] || '').trim(),
+    status:      String(r['Campaign Status'] || '').trim().toUpperCase(),
+    spend:       parseFloat(r['Amount Spent']) || 0,
+    impressions: parseInt(r['Impressions'])    || 0,
+    clicks:      parseInt(r['Clicks'])         || 0,
+    ctr:         parseFloat(r['CTR'])          || 0,
+    cpc:         parseFloat(r['CPC'])          || 0,
+    cpm:         parseFloat(r['CPM'])          || 0,
+    preview:     String(r['Ad Shareable Preview Link'] || '').trim(),
+  })).filter(r => r.date);
+
+  renderCreatives();
+
+  document.getElementById('creativesSearch').addEventListener('input', e => {
+    creativesSearchVal = e.target.value.toLowerCase();
+    renderCreatives();
+  });
+}
+
+function renderCreatives() {
+  const section = document.getElementById('creativesSection');
+  const grid    = document.getElementById('creativesGrid');
+  const counter = document.getElementById('creativesCount');
+
+  // Apply same date + filters as main table
+  const from   = new Date(document.getElementById('dateFrom').value + 'T00:00:00');
+  const to     = new Date(document.getElementById('dateTo').value   + 'T23:59:59');
+  const market = document.getElementById('marketFilter').value;
+  const status = document.getElementById('statusFilter').value;
+
+  const filtered = allAdsRows.filter(r => {
+    if (!r.date || r.date < from || r.date > to) return false;
+    if (market && detectCountry((r.campaign + ' ' + r.account).toUpperCase()) !== market) return false;
+    if (status && r.status !== status) return false;
+    return true;
+  });
+
+  // Group by preview URL (one card per unique ad creative)
+  const adMap = {};
+  filtered.forEach(r => {
+    const key = r.preview || (r.campaign + '|' + r.account);
+    if (!adMap[key]) adMap[key] = { preview: r.preview, campaign: r.campaign, account: r.account, spend: 0, impressions: 0, clicks: 0, days: 0 };
+    adMap[key].spend       += r.spend;
+    adMap[key].impressions += r.impressions;
+    adMap[key].clicks      += r.clicks;
+    adMap[key].days++;
+  });
+
+  let entries = Object.values(adMap).sort((a, b) => b.spend - a.spend);
+
+  if (creativesSearchVal) {
+    entries = entries.filter(a =>
+      a.campaign.toLowerCase().includes(creativesSearchVal) ||
+      a.account.toLowerCase().includes(creativesSearchVal)
+    );
+  }
+
+  if (!entries.length) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  counter.textContent = entries.length + ' ad' + (entries.length !== 1 ? 's' : '');
+
+  grid.innerHTML = entries.map(ad => {
+    const ctr = ad.impressions > 0 ? (ad.clicks / ad.impressions * 100) : 0;
+    const cpc = ad.clicks > 0      ? (ad.spend / ad.clicks)             : 0;
+    const cpm = ad.impressions > 0 ? (ad.spend / ad.impressions * 1000) : 0;
+    const shortCampaign = ad.campaign.split('_').slice(-2).join('_') || ad.campaign;
+
+    const previewBlock = ad.preview
+      ? `<iframe src="${ad.preview}" scrolling="no" allowtransparency="true" allow="encrypted-media"></iframe>
+         <a class="creative-preview-btn" href="${ad.preview}" target="_blank" rel="noopener">Ver ad ↗</a>`
+      : `<div class="creative-preview-placeholder">
+           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+           <span>Sin preview</span>
+         </div>`;
+
+    return `
+      <div class="creative-card">
+        <div class="creative-preview-wrap">${previewBlock}</div>
+        <div class="creative-body">
+          <div class="creative-name" title="${ad.campaign}">${shortCampaign}</div>
+          <div class="creative-campaign" title="${ad.account}">${ad.account}</div>
+          <div class="creative-kpis">
+            <div class="creative-kpi">
+              <div class="creative-kpi-val">${fmtMoney(ad.spend)}</div>
+              <div class="creative-kpi-lbl">Inversión</div>
+            </div>
+            <div class="creative-kpi">
+              <div class="creative-kpi-val">${fmtNum(ad.clicks)}</div>
+              <div class="creative-kpi-lbl">Clics</div>
+            </div>
+            <div class="creative-kpi">
+              <div class="creative-kpi-val">${fmtNum(ad.impressions)}</div>
+              <div class="creative-kpi-lbl">Impresiones</div>
+            </div>
+          </div>
+          <div class="creative-kpis-row2">
+            <div class="creative-kpi">
+              <div class="creative-kpi-val">${ctr.toFixed(2)}%</div>
+              <div class="creative-kpi-lbl">CTR</div>
+            </div>
+            <div class="creative-kpi">
+              <div class="creative-kpi-val">$${cpc.toFixed(3)}</div>
+              <div class="creative-kpi-lbl">CPC</div>
+            </div>
+            <div class="creative-kpi">
+              <div class="creative-kpi-val">$${cpm.toFixed(2)}</div>
+              <div class="creative-kpi-lbl">CPM</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 function processData(data) {
@@ -1175,6 +1368,7 @@ function render() {
   updateKPIs(rows);
   updateCharts(rows);
   updateTable(rows);
+  if (allAdsRows.length) renderCreatives();
 }
 
 // ─── HERO META ──────────────────────────────────────────
