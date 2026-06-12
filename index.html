@@ -42,17 +42,107 @@
 
   /* ── light mode ── */
   body.light {
-    --bg:       #F4F5F8;
-    --surface:  #FFFFFF;
-    --surface2: #EEF0F5;
-    --surface3: #E2E5EE;
-    --border:   rgba(0,0,0,.08);
-    --border-h: rgba(255,68,26,.4);
-    --text:     #111827;
-    --text2:    #374151;
-    --muted:    #9CA3AF;
-    --rappi-dim: rgba(255,68,26,.08);
+    --bg:        #F0F2F7;
+    --surface:   #FFFFFF;
+    --surface2:  #F5F6FA;
+    --surface3:  #E8EAF2;
+    --border:    rgba(0,0,0,.09);
+    --border-h:  rgba(255,68,26,.45);
+    --text:      #0F172A;
+    --text2:     #334155;
+    --muted:     #94A3B8;
+    --rappi-dim: rgba(255,68,26,.07);
   }
+
+  /* hero in light mode */
+  body.light .hero {
+    background: linear-gradient(135deg, #fff5f2 0%, #fff8f5 40%, #ffffff 100%);
+    border-bottom: 1px solid rgba(255,68,26,.12);
+  }
+  body.light .hero::before {
+    background: radial-gradient(circle, rgba(255,68,26,.08) 0%, transparent 70%);
+  }
+  body.light .hero-title { color: #0F172A; }
+  body.light .hero-sub   { color: #64748B; }
+  body.light .hero-meta-item { color: #94A3B8; }
+  body.light .hero-meta-item strong { color: #334155; }
+
+  /* topbar in light */
+  body.light .topbar {
+    background: #FFFFFF;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+    box-shadow: 0 1px 8px rgba(0,0,0,.06);
+  }
+  body.light .topbar-subtitle { color: #64748B; }
+  body.light .topbar-subtitle strong { color: #0F172A; }
+  body.light .topbar-divider { background: rgba(0,0,0,.08); }
+
+  /* cards in light */
+  body.light .kpi-card {
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  body.light .kpi-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,.1);
+  }
+  body.light .kpi-card.highlight {
+    background: linear-gradient(135deg, rgba(255,68,26,.05), #fff);
+    border-color: rgba(255,68,26,.2);
+  }
+  body.light .kpi-value { color: #0F172A; }
+  body.light .kpi-label { color: #94A3B8; }
+  body.light .kpi-sub   { color: #94A3B8; }
+
+  /* chart cards */
+  body.light .chart-card {
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  body.light .chart-title { color: #0F172A; }
+  body.light .chart-sub   { color: #94A3B8; }
+
+  /* filters */
+  body.light .filters-bar {
+    background: #FFFFFF;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  body.light .filter-sep { background: rgba(0,0,0,.08); }
+  body.light select, body.light input[type="date"] {
+    background: #F5F6FA;
+    color: #0F172A;
+    border-color: rgba(0,0,0,.1);
+  }
+  body.light .pill { color: #64748B; border-color: rgba(0,0,0,.12); }
+  body.light .pill:hover { border-color: var(--rappi-light); color: var(--rappi-light); }
+  body.light .pill.active { background: rgba(255,68,26,.08); border-color: var(--rappi); color: var(--rappi); }
+  body.light .pill-row .filter-label { color: #94A3B8; }
+
+  /* table */
+  body.light .table-card { box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  body.light thead tr { border-bottom-color: rgba(0,0,0,.08); }
+  body.light th { color: #94A3B8; }
+  body.light tbody tr { border-bottom-color: rgba(0,0,0,.05); }
+  body.light tbody tr:hover { background: #F5F6FA; }
+  body.light td { color: #0F172A; }
+  body.light .table-count { color: #94A3B8; background: #F5F6FA; }
+  body.light .table-search { background: #F5F6FA; color: #0F172A; }
+
+  /* search dropdown */
+  body.light .search-select-btn { background: #F5F6FA; color: #0F172A; }
+  body.light .search-select-panel { background: #FFFFFF; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+  body.light .search-select-input { background: #F5F6FA; color: #0F172A; border-bottom-color: rgba(0,0,0,.08); }
+  body.light .search-select-option { color: #334155; }
+  body.light .search-select-option:hover { background: #F5F6FA; }
+
+  /* live badge & refresh */
+  body.light .refresh-btn { background: #F5F6FA; color: #64748B; border-color: rgba(0,0,0,.1); }
+  body.light .last-updated { color: #94A3B8; }
+
+  /* footer */
+  body.light .footer { border-top-color: rgba(0,0,0,.08); color: #94A3B8; }
+
+  /* cpills */
+  body.light .cpill { color: #94A3B8; border-color: rgba(0,0,0,.1); }
+  body.light .cpill:hover { border-color: var(--rappi-light); color: var(--rappi-light); }
+  body.light .cpill.cpill-active { background: rgba(255,68,26,.08); border-color: var(--rappi); color: var(--rappi); }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1063,21 +1153,30 @@ function updateKPIs(rows) {
 }
 
 // ─── CHARTS ─────────────────────────────────────────────
+function getChartColors() {
+  const light = document.body.classList.contains('light');
+  return {
+    grid: light ? 'rgba(0,0,0,.06)' : 'rgba(255,255,255,.05)',
+    tick: light ? '#94A3B8'         : '#636B84',
+  };
+}
+// keep backward compat references — resolved at render time
 const GRID_COLOR = 'rgba(255,255,255,.05)';
 const TICK_COLOR = '#636B84';
 
 function baseScales(yFmt) {
+  const { grid, tick } = getChartColors();
   return {
     x: {
       type: 'time',
       time: { unit:'day', displayFormats:{ day:'dd MMM' } },
-      ticks: { color: TICK_COLOR, maxTicksLimit: 8, font:{size:10,family:'Poppins'} },
-      grid: { color: GRID_COLOR },
+      ticks: { color: tick, maxTicksLimit: 8, font:{size:10,family:'Poppins'} },
+      grid: { color: grid },
       border: { color: 'transparent' },
     },
     y: {
-      ticks: { color: TICK_COLOR, callback: yFmt, font:{size:10,family:'Poppins'} },
-      grid: { color: GRID_COLOR },
+      ticks: { color: tick, callback: yFmt, font:{size:10,family:'Poppins'} },
+      grid: { color: grid },
       border: { color: 'transparent' },
     }
   };
@@ -1172,7 +1271,7 @@ function updateCharts(rows) {
     options: {
       responsive:true, maintainAspectRatio:false, cutout:'68%',
       plugins: {
-        legend:{ display:true, position:'bottom', labels:{ color:TICK_COLOR, font:{size:10,family:'Poppins'}, padding:10, boxWidth:8, borderRadius:4 }},
+        legend:{ display:true, position:'bottom', labels:{ color:getChartColors().tick, font:{size:10,family:'Poppins'}, padding:10, boxWidth:8, borderRadius:4 }},
         tooltip:{ callbacks:{ label: c=>' $'+c.parsed.toFixed(2) }, backgroundColor:'#1F2433', titleColor:'#F0F2F7', bodyColor:'#A8B0C8', borderColor:'rgba(255,68,26,.3)', borderWidth:1 }
       }
     }
