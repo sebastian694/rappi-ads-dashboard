@@ -1905,6 +1905,7 @@ if (localStorage.getItem('theme') === 'light') {
 
 // ─── INIT ───────────────────────────────────────────────
 loadData();
+setInterval(loadData, 60 * 60 * 1000); // auto-refresh every hour
 
 // ─── RAPPAI QUERY ENGINE ────────────────────────────────
 function normalizeStr(s) {
@@ -2122,8 +2123,6 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ─── INIT ───────────────────────────────────────────────
-loadData();
 </script>
 
 <!-- RAPPAI CHAT -->
