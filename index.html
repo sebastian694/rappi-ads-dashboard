@@ -1215,7 +1215,7 @@ function processAdsData(data) {
     ctr:         parseFloat(r['CTR'])          || 0,
     cpc:         parseFloat(r['CPC'])          || 0,
     cpm:         parseFloat(r['CPM'])          || 0,
-    preview:     String(r['Ad Shareable Preview Link'] || '').trim(),
+    preview:     String(r['Ad Shareable Preview Link'] || r['Ad shareable preview link'] || r['ad shareable preview link'] || r['Preview Link'] || r['preview_link'] || '').trim(),
   })).filter(r => r.date);
 
   renderCreatives();
@@ -1246,8 +1246,10 @@ function renderCreatives() {
 
   // Group by preview URL (one card per unique ad creative)
   const adMap = {};
+  let _idx = 0;
   filtered.forEach(r => {
-    const key = r.preview || (r.campaign + '|' + r.account);
+    // group by preview URL; if missing, each row is its own entry
+    const key = r.preview || ('__row__' + (_idx++));
     if (!adMap[key]) adMap[key] = { preview: r.preview, campaign: r.campaign, account: r.account, spend: 0, impressions: 0, clicks: 0, days: 0 };
     adMap[key].spend       += r.spend;
     adMap[key].impressions += r.impressions;
