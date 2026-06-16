@@ -988,6 +988,61 @@
     .kpi-value { font-size: 17px; }
     .hero-title { font-size: 15px; }
   }
+
+  /* ══════════════════ PRINT / PDF ══════════════════ */
+  .print-header { display: none; }
+
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+    .topbar, .filters-bar, .pill-row, .rappai-fab-wrap, .rappai-panel,
+    .refresh-btn, #themeToggle, .download-btn, .table-search,
+    .table-top-left .deep-dive-btn, a.deep-dive-btn,
+    .footer, .state-overlay { display: none !important; }
+
+    body { background: #fff !important; color: #111 !important; font-size: 11px; }
+    .hero { padding: 12px 16px; background: #fff !important; border-bottom: 2px solid #FF441A; }
+    .hero-title { font-size: 16px; color: #111 !important; }
+    .hero-sub, .hero-meta-item { color: #555 !important; }
+    .hero-meta-item strong { color: #111 !important; }
+
+    .main { padding: 12px 16px; max-width: 100%; }
+
+    .print-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 0; }
+    .print-header-left { display: flex; align-items: center; gap: 10px; }
+    .print-date { font-size: 10px; color: #888; }
+
+    .kpi-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 8px; }
+    .kpi-card { border: 1px solid #e2e2e2 !important; background: #fafafa !important; break-inside: avoid; }
+    .kpi-value { font-size: 20px !important; color: #111 !important; }
+    .kpi-label { color: #888 !important; }
+    .kpi-card.highlight .kpi-value { color: #FF441A !important; }
+    .kpi-sub { color: #888 !important; }
+
+    .charts-row, .charts-row-2 { grid-template-columns: 1fr 1fr !important; gap: 8px; }
+    .chart-card { border: 1px solid #e2e2e2 !important; background: #fff !important; break-inside: avoid; }
+    .chart-title { color: #111 !important; }
+    .chart-sub { color: #888 !important; }
+
+    .target-section { border: 1px solid #e2e2e2 !important; background: #fff !important; break-inside: avoid; }
+    .target-section-title { color: #111 !important; }
+    .target-cards-row { grid-template-columns: repeat(3, 1fr) !important; }
+    .tc-card { border: 1px solid #e2e2e2 !important; background: #f9f9f9 !important; break-inside: avoid; }
+    .tc-name, .tc-sub { color: #111 !important; }
+    .tc-ring-bg { stroke: #e0e0e0 !important; }
+    .tc-cpc-row { background: #f5f5f5 !important; }
+    .tc-cpc-track { background: #e0e0e0 !important; }
+
+    .table-card { border: 1px solid #e2e2e2 !important; background: #fff !important; break-inside: avoid; }
+    .table-title { color: #111 !important; }
+    th { color: #888 !important; }
+    td { color: #111 !important; }
+    tbody tr { border-bottom-color: #f0f0f0 !important; }
+    tbody tr:hover { background: transparent !important; }
+    .spend-val { color: #FF441A !important; }
+
+    .creativesSection table { font-size: 10px; }
+  }
 </style>
 </head>
 <body>
@@ -1017,6 +1072,10 @@
     <span class="last-updated" id="lastUpdated"></span>
     <button class="refresh-btn" id="themeToggle" onclick="toggleTheme()" title="Cambiar modo">
       <svg id="themeIcon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
+    <button class="refresh-btn download-btn" onclick="downloadReport()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Descargar PDF
     </button>
     <button class="refresh-btn" onclick="loadData()">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
@@ -1985,6 +2044,15 @@ document.querySelectorAll('[data-compound]').forEach(btn => {
 // ─── THEME ──────────────────────────────────────────────
 const MOON = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z"/></svg>`;
 const SUN  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`;
+
+function downloadReport() {
+  const from  = document.getElementById('dateFrom').value;
+  const to    = document.getElementById('dateTo').value;
+  const title = document.title;
+  document.title = `Rappi Ads - Reporte ${from} al ${to}`;
+  window.print();
+  document.title = title;
+}
 
 function toggleTheme() {
   const isLight = document.body.classList.toggle('light');
