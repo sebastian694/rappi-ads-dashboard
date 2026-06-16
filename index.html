@@ -797,18 +797,25 @@
   .tc-ring-vals { font-size: 9px; color: var(--muted); margin-top: 1px; }
 
   .tc-cpc-row {
-    display: flex; align-items: center; gap: 10px;
     background: rgba(255,255,255,.04); border-radius: 10px;
-    padding: 10px 14px;
+    padding: 11px 14px; display: flex; flex-direction: column; gap: 8px;
   }
-  .tc-cpc-icon { font-size: 14px; flex-shrink: 0; }
-  .tc-cpc-info { flex: 1; min-width: 0; }
-  .tc-cpc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+  .tc-cpc-top { display: flex; align-items: center; justify-content: space-between; }
   .tc-cpc-label { font-size: 10px; font-weight: 600; color: var(--text); }
   .tc-cpc-tag  { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
-  .tc-cpc-val  { font-size: 18px; font-weight: 800; margin-bottom: 6px; display: block; }
-  .tc-cpc-track { height: 6px; background: rgba(255,255,255,.07); border-radius: 99px; overflow: hidden; }
+  .tc-cpc-main { display: flex; align-items: flex-end; justify-content: space-between; }
+  .tc-cpc-val  { font-size: 22px; font-weight: 800; line-height: 1; }
+  .tc-cpc-saving { font-size: 10px; font-weight: 600; color: #22c55e; background: rgba(34,197,94,.1); border-radius: 6px; padding: 3px 7px; }
+  .tc-cpc-track-wrap { position: relative; }
+  .tc-cpc-track { height: 7px; background: rgba(255,255,255,.07); border-radius: 99px; overflow: visible; position: relative; }
   .tc-cpc-fill  { height: 100%; border-radius: 99px; transition: width .7s cubic-bezier(.4,0,.2,1); }
+  .tc-cpc-marker {
+    position: absolute; top: -4px; width: 2px; height: 15px;
+    background: rgba(255,255,255,.3); border-radius: 1px;
+    transition: left .7s cubic-bezier(.4,0,.2,1);
+  }
+  .tc-cpc-track-labels { display: flex; justify-content: space-between; margin-top: 4px; }
+  .tc-cpc-track-lbl { font-size: 9px; color: var(--muted); }
 
   .charts-row-full { grid-template-columns: 1fr !important; }
   body.light .tc-card { border-color: rgba(0,0,0,.08); }
@@ -1825,15 +1832,22 @@ function updateTargetPanel(rows) {
         </div>
       </div>
       <div class="tc-cpc-row">
-        <span class="tc-cpc-icon">⚡</span>
-        <div class="tc-cpc-info">
-          <div class="tc-cpc-top">
-            <span class="tc-cpc-label">CPC <span style="color:var(--muted);font-weight:400;font-size:9px;">límite $${CPC_TARGET.toFixed(2)}</span></span>
-            <span class="tc-cpc-tag" style="background:${cpcTagBg};color:${cpcColor}">${cpcTag}</span>
-          </div>
+        <div class="tc-cpc-top">
+          <span class="tc-cpc-label">⚡ CPC <span style="color:var(--muted);font-weight:400;font-size:9px;">límite $${CPC_TARGET.toFixed(2)}</span></span>
+          <span class="tc-cpc-tag" style="background:${cpcTagBg};color:${cpcColor}">${cpcTag}</span>
+        </div>
+        <div class="tc-cpc-main">
           <span class="tc-cpc-val" style="color:${cpcColor}">${actualCpc !== null ? '$'+actualCpc.toFixed(2) : '—'}</span>
+          ${actualCpc !== null && actualCpc < CPC_TARGET ? `<span class="tc-cpc-saving">$${(CPC_TARGET - actualCpc).toFixed(2)} bajo límite</span>` : ''}
+        </div>
+        <div class="tc-cpc-track-wrap">
           <div class="tc-cpc-track">
             <div class="tc-cpc-fill" style="width:${cpcPct}%;background:${cpcColor}"></div>
+            <div class="tc-cpc-marker" style="left:calc(100% - 2px)"></div>
+          </div>
+          <div class="tc-cpc-track-labels">
+            <span class="tc-cpc-track-lbl">$0</span>
+            <span class="tc-cpc-track-lbl" style="color:rgba(255,255,255,.4);">límite $${CPC_TARGET.toFixed(2)}</span>
           </div>
         </div>
       </div>
