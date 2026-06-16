@@ -1762,7 +1762,7 @@ function updateTargetPanel(rows) {
   function ring(pct, color, label, val1, val2) {
     const r = 38, stroke = 7;
     const circ = 2 * Math.PI * r;
-    const offset = circ * (1 - Math.min(pct, 100) / 100);
+    const offset = circ * (1 - Math.min(pct, 100) / 100); // ring maxes at full circle
     const size = (r + stroke) * 2 + 4;
     const cx = size / 2;
     return `
@@ -1774,7 +1774,7 @@ function updateTargetPanel(rows) {
             stroke-dasharray="${circ.toFixed(1)}"
             stroke-dashoffset="${offset.toFixed(1)}"
             transform="rotate(-90 ${cx} ${cx})"/>
-          <text x="${cx}" y="${cx - 6}" class="tc-ring-label" font-size="13" font-weight="800" fill="${color}">${Math.min(pct,100).toFixed(0)}%</text>
+          <text x="${cx}" y="${cx - 6}" class="tc-ring-label" font-size="${pct >= 100 ? '11' : '13'}" font-weight="800" fill="${color}">${pct.toFixed(0)}%</text>
           <text x="${cx}" y="${cx + 10}" class="tc-ring-label" font-size="9" fill="#8892AA">${label}</text>
         </svg>
         <div class="tc-ring-meta">
