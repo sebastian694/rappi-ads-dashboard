@@ -1837,18 +1837,11 @@ function updateTargetPanel(rows) {
           <span class="tc-cpc-tag" style="background:${cpcTagBg};color:${cpcColor}">${cpcTag}</span>
         </div>
         <div class="tc-cpc-main">
-          <span class="tc-cpc-val" style="color:${cpcColor}">${actualCpc !== null ? '$'+actualCpc.toFixed(2) : '—'}</span>
+          <div style="display:flex;align-items:flex-end;gap:10px;">
+            <span class="tc-cpc-val" style="color:${cpcColor}">${actualCpc !== null ? '$'+actualCpc.toFixed(2) : '—'}</span>
+            <span class="tc-cpc-val" style="color:var(--muted);opacity:.5;">/ $${CPC_TARGET.toFixed(2)}</span>
+          </div>
           ${actualCpc !== null && actualCpc < CPC_TARGET ? `<span class="tc-cpc-saving">$${(CPC_TARGET - actualCpc).toFixed(2)} bajo límite</span>` : ''}
-        </div>
-        <div class="tc-cpc-track-wrap">
-          <div class="tc-cpc-track">
-            <div class="tc-cpc-fill" style="width:${cpcPct}%;background:${cpcColor}"></div>
-            <div class="tc-cpc-marker" style="left:calc(100% - 2px)"></div>
-          </div>
-          <div class="tc-cpc-track-labels">
-            <span class="tc-cpc-track-lbl">$0</span>
-            <span class="tc-cpc-track-lbl" style="color:rgba(255,255,255,.4);">límite $${CPC_TARGET.toFixed(2)}</span>
-          </div>
         </div>
       </div>
     </div>`;
